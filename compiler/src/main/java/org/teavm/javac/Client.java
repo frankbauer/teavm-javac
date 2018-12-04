@@ -80,6 +80,7 @@ import org.teavm.vm.TeaVMProgressListener;
 public final class Client {
     private static boolean isBusy;
     private static String mainClass;
+    private static PositionIndexer positionIndexer;
 
     private Client() {
     }
@@ -132,6 +133,7 @@ public final class Client {
     }
 
     private static void compileAll(CompileMessage request) throws IOException {
+        positionIndexer = new PositionIndexer(request.getText());
         createSourceFile(request.getText(), request.getMainClass() + ".java");
 
         CompilationResultMessage response = createMessage();
@@ -232,6 +234,20 @@ public final class Client {
 
             response.setCode(diagnostic.getCode());
             response.setMessage(diagnostic.getMessage(Locale.getDefault()));
+
+
+            Position start = positionIndexer.getPositionAt(response.getStartPosition(), true);            
+            int endPosition = response.getEndPosition();
+            if (endPosition == response.getStartPosition()) {
+                endPosition++;
+            }
+            Position end = positionIndexer.getPositionAt(endPosition, false);
+            response.setStartLineNumber(start.line);
+            response.setStartColumn(start.column);
+            response.setEndLineNumber(end.line);
+            response.setEndColumn(end.column);
+
+            response.setHumanReadable(buildDiagnosticString(response));
 
             Window.worker().postMessage(response);
         };
@@ -514,6 +530,30 @@ public final class Client {
                 sb.append(line).append('\n');
             }
         }
+        return sb.toString();
+    }
+
+    private static String buildDiagnosticString(CompilerDiagnosticMessage request) {
+        StringBuilder sb = new StringBuilder();
+        switch (request.getKind()) {
+            case "ERROR":
+                sb.append("ERROR ");
+                break;
+            case "WARNING":
+            case "MANDATORY_WARNING":
+                sb.append("WARNING ");
+                break;
+        }
+
+        if (request.getObject() != null) {
+            sb.append("at " + request.getObject().getName());
+            if (request.getLineNumber() >= 0) {
+                sb.append("(").append(request.getStartLineNumber() + 1).append(":").append(request.getStartColumn() + 1)
+                        .append(")");
+            }
+            sb.append(' ');
+        }
+        sb.append(request.getMessage());
         return sb.toString();
     }
 }

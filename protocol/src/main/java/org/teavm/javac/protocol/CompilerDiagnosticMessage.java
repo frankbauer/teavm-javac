@@ -72,4 +72,34 @@ public interface CompilerDiagnosticMessage extends WorkerMessage {
 
     @JSProperty
     void setMessage(String message);
+
+    @JSProperty
+    String getHumanReadable();
+
+    @JSProperty
+    void setHumanReadable(String message);
+
+    @JSProperty
+    int getStartLineNumber();
+
+    @JSProperty
+    void setStartLineNumber(int lineNumber);
+
+    @JSProperty
+    int getEndLineNumber();
+
+    @JSProperty
+    void setEndLineNumber(int lineNumber);
+
+    @JSProperty
+    int getStartColumn();
+
+    @JSProperty
+    void setStartColumn(int column);
+
+    @JSProperty
+    int getEndColumn();
+
+    @JSProperty
+    void setEndColumn(int column);
 }
