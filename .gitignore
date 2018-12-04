@@ -7,3 +7,11 @@
 target
 node_modules
 *.iml
+*/.settings
+*/.classpath
+*/.project
+classlib/org
+.project
+classlib/dependency-reduced-pom.xml
+classlib/META-INF/services/org.teavm.vm.spi.TeaVMPlugin
+.settings
