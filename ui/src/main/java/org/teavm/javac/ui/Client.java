@@ -267,6 +267,7 @@ public final class Client {
         String code = codeMirror.getValue();
         positionIndexer = new PositionIndexer(code);
         request.setText(code);
+        request.setMainClass("Main");
         worker.postMessage(request);
 
         while (true) {

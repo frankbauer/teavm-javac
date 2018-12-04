@@ -79,7 +79,6 @@ import org.teavm.vm.TeaVMProgressListener;
 
 public final class Client {
     private static boolean isBusy;
-    private static final String SOURCE_FILE_NAME = "Main.java";
     private static String mainClass;
 
     private Client() {
@@ -133,7 +132,7 @@ public final class Client {
     }
 
     private static void compileAll(CompileMessage request) throws IOException {
-        createSourceFile(request.getText());
+        createSourceFile(request.getText(), request.getMainClass() + ".java");
 
         CompilationResultMessage response = createMessage();
         response.setId(request.getId());
@@ -191,11 +190,11 @@ public final class Client {
         });
     }
 
-    private static boolean doCompile(WorkerMessage request) throws IOException {
+    private static boolean doCompile(CompileMessage request) throws IOException {
         JavaCompiler compiler = JavacTool.create();
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
         Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(
-                Arrays.asList(new File("/" + SOURCE_FILE_NAME)));
+                Arrays.asList(new File("/" + request.getMainClass() + ".java")));
         OutputStreamWriter out = new OutputStreamWriter(System.out);
 
         File outDir = new File("/out");
@@ -250,7 +249,7 @@ public final class Client {
         stdlibClassSource = new DirectoryClasspathClassHolderSource(new File("/teavm-stdlib"), stdlibMapping);
     }
 
-    private static boolean detectMainClass(WorkerMessage request) throws IOException {
+    private static boolean detectMainClass(CompileMessage request) throws IOException {
         Set<String> candidates = new HashSet<>();
         detectMainClass(new File("/out"), candidates);
         if (candidates.size() != 1) {
@@ -270,7 +269,7 @@ public final class Client {
         return true;
     }
 
-    private static boolean generateJavaScript(WorkerMessage request) {
+    private static boolean generateJavaScript(CompileMessage request) {
         try {
             long start = System.currentTimeMillis();
 
@@ -290,9 +289,15 @@ public final class Client {
             new JCLPlugin().install(teavm);
             log("Plugins loaded in " + (System.currentTimeMillis() - pluginInstallationStart) + " ms");
 
-            teavm.entryPoint("main", new MethodReference(mainClass, "main", ValueType.parse(String[].class),
-                    ValueType.VOID))
-                    .withArrayValue(1, "java.lang.String");
+            teavm.entryPoint(
+                "main", 
+                new MethodReference(
+                    request.getMainClass(), 
+                    "main", 
+                    ValueType.parse(String[].class),
+                    ValueType.VOID
+                )
+            ).withArrayValue(1, "java.lang.String");
             File outDir = new File("/js-out");
             outDir.mkdirs();
 
@@ -332,7 +337,7 @@ public final class Client {
                     hasSevere = true;
                 }
             }
-            TeaVMProblemRenderer.describeProblems(request, SOURCE_FILE_NAME, teavm);
+            TeaVMProblemRenderer.describeProblems(request, request.getMainClass() + ".java", teavm);
 
             long end = System.currentTimeMillis();
             log("TeaVM complete in " + (end - start) + " ms");
@@ -454,8 +459,8 @@ public final class Client {
         xhr.send();
     }
 
-    private static void createSourceFile(String content) throws IOException {
-        File file = new File("/" + SOURCE_FILE_NAME);
+    private static void createSourceFile(String content, String name) throws IOException {
+        File file = new File("/" + name);
 
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"))) {
             writer.write(content);

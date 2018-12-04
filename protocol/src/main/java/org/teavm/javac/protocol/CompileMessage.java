@@ -24,4 +24,10 @@ public interface CompileMessage extends WorkerMessage {
 
     @JSProperty
     void setText(String text);
+
+    @JSProperty
+    String getMainClass();
+
+    @JSProperty
+    void setMainClass(String text);
 }
