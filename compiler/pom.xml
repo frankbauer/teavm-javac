@@ -86,7 +86,7 @@
             <goals>
               <goal>compile</goal>
             </goals>
-            <phase>prepare-package</phase>
+            <phase>process-classes</phase>
             <configuration>
               <targetDirectory>${project.build.directory}/generated/js/teavm/worker</targetDirectory>
               <mainClass>org.teavm.javac.Client</mainClass>
@@ -95,6 +95,8 @@
               <sourceFilesCopied>true</sourceFilesCopied>
               <debugInformationGenerated>true</debugInformationGenerated>
               <optimizationLevel>ADVANCED</optimizationLevel>
+              <runtime>SEPARATE</runtime>
+              <targetType>JAVASCRIPT</targetType>
             </configuration>
           </execution>
         </executions>

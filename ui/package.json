@@ -1,4 +1,8 @@
 {
+  "name": "teavm_helper",
+  "description": "Just for You",
+  "repository": {},
+  "license": "MIT",
   "dependencies": {
     "codemirror": "5.32.0",
     "bootstrap": "3.3.7",
