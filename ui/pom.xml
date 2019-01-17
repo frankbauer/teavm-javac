@@ -96,6 +96,33 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.0.2</version>
+        <executions>
+          <execution>
+            <id>unpack</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.teavm.javac</groupId>
+                  <artifactId>teavm-javac-classlib</artifactId>
+                  <version>${project.version}</version>
+                  <outputDirectory>${project.build.directory}/classlib-unpacked/</outputDirectory>
+                  <includes>**</includes>
+                </artifactItem>
+              </artifactItems>
+              <overWriteIfNewer>true</overWriteIfNewer>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.teavm</groupId>
         <artifactId>teavm-maven-plugin</artifactId>
         <version>${teavm.version}</version>
@@ -113,6 +140,8 @@
               <sourceMapsGenerated>true</sourceMapsGenerated>
               <sourceFilesCopied>true</sourceFilesCopied>
               <optimizationLevel>ADVANCED</optimizationLevel>
+              <runtime>SEPARATE</runtime>
+              <targetType>JAVASCRIPT</targetType>
             </configuration>
           </execution>
         </executions>

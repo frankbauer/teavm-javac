@@ -17,7 +17,6 @@ package org.teavm.javac;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -32,13 +31,13 @@ public class ClassReplacementElimination implements ClassHolderTransformer {
     }
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() != null) {
                 transformProgram(method.getProgram());
             }
         }
-    }
+    }   
 
     private void transformProgram(Program program) {
         for (BasicBlock block : program.getBasicBlocks()) {

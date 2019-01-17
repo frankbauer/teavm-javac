@@ -86,7 +86,7 @@
             <goals>
               <goal>compile</goal>
             </goals>
-            <phase>prepare-package</phase>
+            <phase>process-classes</phase>
             <configuration>
               <targetDirectory>${project.build.directory}/generated/js/teavm/worker</targetDirectory>
               <mainClass>org.teavm.javac.Client</mainClass>
@@ -95,6 +95,8 @@
               <sourceFilesCopied>true</sourceFilesCopied>
               <debugInformationGenerated>true</debugInformationGenerated>
               <optimizationLevel>ADVANCED</optimizationLevel>
+              <runtime>SEPARATE</runtime>
+              <targetType>JAVASCRIPT</targetType>
             </configuration>
           </execution>
         </executions>
@@ -111,6 +113,7 @@
             <configuration>
               <encoding>UTF-8</encoding>
               <consoleOutput>true</consoleOutput>
+              <outputFile>${basedir}/checkstyle.log</outputFile>
               <failsOnError>true</failsOnError>
               <includeTestSourceDirectory>true</includeTestSourceDirectory>
             </configuration>
@@ -142,6 +145,13 @@
                   <artifactId>teavm-javac-classlib</artifactId>
                   <version>${project.version}</version>
                   <outputDirectory>${project.build.directory}/classlib-unpacked/</outputDirectory>
+                  <includes>**</includes>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.teavm.javac</groupId>
+                  <artifactId>teavm-javac-javac</artifactId>
+                  <version>${project.version}</version>
+                  <outputDirectory>${project.build.directory}/classes/</outputDirectory>
                   <includes>**</includes>
                 </artifactItem>
               </artifactItems>

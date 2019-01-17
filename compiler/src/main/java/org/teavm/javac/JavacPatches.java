@@ -18,7 +18,6 @@ package org.teavm.javac;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.optimization.ConstantConditionElimination;
@@ -27,7 +26,7 @@ import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 
 public class JavacPatches implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         switch (cls.getName()) {
             case "com.sun.tools.javac.main.JavaCompiler":
                 processJavaCompiler(cls);
@@ -149,8 +148,8 @@ public class JavacPatches implements ClassHolderTransformer {
             boolean changed;
             do {
                 changed = new GlobalValueNumbering(true).optimize(program)
-                        | new ConstantConditionElimination().optimize(null, program)
-                        | new UnreachableBasicBlockElimination().optimize(null, program);
+                        | new ConstantConditionElimination().optimize(method.get().getDescriptor(), program)
+                        | new UnreachableBasicBlockElimination().optimize(null, program); 
             } while (changed);
         }
     }
