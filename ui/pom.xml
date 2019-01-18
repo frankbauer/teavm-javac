@@ -112,7 +112,7 @@
                   <groupId>org.teavm.javac</groupId>
                   <artifactId>teavm-javac-classlib</artifactId>
                   <version>${project.version}</version>
-                  <outputDirectory>${project.build.directory}/classlib-unpacked/</outputDirectory>
+                  <outputDirectory>${project.build.directory}/classes/</outputDirectory>
                   <includes>**</includes>
                 </artifactItem>
               </artifactItems>
