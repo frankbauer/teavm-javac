@@ -15,9 +15,18 @@
  */
 package org.teavm.javac;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import org.teavm.model.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ServiceLoader;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.Instruction;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.ValueType;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 
@@ -25,8 +34,6 @@ public class ClassReplacementElimination implements ClassHolderTransformer {
     private static final Map<String, String> replacements = new HashMap<>();
 
     static {
-        replacements.put(ConcurrentHashMap.class.getName(), HashMap.class.getName());
-        replacements.put(WeakHashMap.class.getName(), HashMap.class.getName());
         replacements.put("com.sun.tools.javac.util.ServiceLoader", ServiceLoader.class.getName());
     }
 
@@ -37,7 +44,7 @@ public class ClassReplacementElimination implements ClassHolderTransformer {
                 transformProgram(method.getProgram());
             }
         }
-    }   
+    }
 
     private void transformProgram(Program program) {
         for (BasicBlock block : program.getBasicBlocks()) {
