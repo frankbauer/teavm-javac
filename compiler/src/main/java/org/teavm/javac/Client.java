@@ -260,7 +260,7 @@ public final class Client {
         stdlibMapping.setProperty("packagePrefix.java", "org.teavm.classlib");
         stdlibMapping.setProperty("classPrefix.java", "T");
 
-        stdlibClassSource = new DirectoryClasspathClassHolderSource(new File("/teavm-stdlib"), stdlibMapping);
+        stdlibClassSource = new DirectoryClasspathClassHolderSource(new File("/teavm-stdlib"), stdlibMapping, null);
     }
 
     private static boolean detectMainClass(CompileMessage request) throws IOException {
@@ -289,7 +289,7 @@ public final class Client {
 
             List<ClassHolderSource> classSources = new ArrayList<>();
             classSources.add(stdlibClassSource);
-            classSources.add(new DirectoryClasspathClassHolderSource(new File("/out")));
+            classSources.add(new DirectoryClasspathClassHolderSource(new File("/out"), null));
 
             JavaScriptTarget jsTarget = new JavaScriptTarget();
             jsTarget.setMinifying(false);
