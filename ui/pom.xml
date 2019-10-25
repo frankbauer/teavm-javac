@@ -53,12 +53,7 @@
       <version>${project.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.teavm.javac</groupId>
-      <artifactId>teavm-javac-compiler</artifactId>
-      <version>${project.version}</version>
-      <type>war</type>
-    </dependency>
+
   </dependencies>
 
   <build>

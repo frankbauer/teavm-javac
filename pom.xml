@@ -26,10 +26,10 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
-    <jdk.langtools.revision>bb183e5fa58f</jdk.langtools.revision>
-    <teavm.version>0.7.0-dev-906</teavm.version>
+    <jdk.langtools.revision>53092d863cb6</jdk.langtools.revision>
+    <teavm.version>0.6.0-dev-661</teavm.version>
     <teavm.obfuscated>false</teavm.obfuscated>
-    <teavm.debug>false</teavm.debug>
+    <teavm.debug>true</teavm.debug>
   </properties>
 
   <modules>

@@ -82,10 +82,12 @@ public final class TeaVMProblemRenderer {
                     break;
                 }
                 CallSite callSite = callSites.next();
-                Collection<? extends TextLocation> locations = callSite.getLocations(node);
+                //Collection<? extends TextLocation> locations = callSite.getLocations(node);
+                TextLocation locations = callSite.getLocation();
                 TextLocation tl = null;
                 if (locations != null) {
-                    tl = callSite.getLocations(node).stream().findFirst().get();
+                    //tl = callSite.getLocations(node).stream().findFirst().get();
+                    tl = callSite.getLocation();
                 }
                 if (tl != null && tl.getFileName().equals(fileName)) {
                     targetMessage.setFileName(tl.getFileName());
@@ -93,7 +95,8 @@ public final class TeaVMProblemRenderer {
                     return;
                 }
                 sb.append("\n    at ");
-                CallGraphNode cgn = callSite.getCallers().stream().findFirst().get();
+                //CallGraphNode cgn = callSite.getCallers().stream().findFirst().get();
+                CallGraphNode cgn = callSite.getCaller();
                 renderCallLocation(cgn.getMethod(), tl, sb);
                 node = cgn;
             }

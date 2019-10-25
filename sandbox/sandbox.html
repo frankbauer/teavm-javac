@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+  ~  Copyright 2017 Alexey Andreev.
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  -->
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta property="workerLocation" content="worker.js">
+    <meta property="stdlibLocation" content="classlib.txt">
+    <title>TeaVM &mdash; Online Java compiler (beta)</title>
+    <!--<script type="text/javascript" src="runtime.js"></script>
+    <script type="text/javascript" src="classes.js"></script>-->
+    <link rel="icon" type="image/png" href="favicon.png">
+  </head>
+  <body onload="main()">
+    <div class="toolbar">
+      <button id="compile-button" class="btn btn-default" disabled>
+        <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+        Run
+      </button>
+      <button id="choose-example" class="btn btn-default" disabled>
+        <span class="glyphicon glyphicon-education" aria-hidden="true"></span>
+        Examples
+      </button>
+      <div class="toolbar-right">
+        <a href="https://github.com/konsoletyper/teavm-javac" class="github-link" title="Source code"></a>
+      </div>
+    </div>
+    <div class="content">
+      <div class="editor-container">
+        <textarea cols="80" rows="20" id="source-code">public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, world!");
+    }
+}</textarea>
+        <span class="panel-label">java</span>
+      </div>
+      <div class="out-container">
+        <div class="result-container" id="result-container">
+          <iframe id="result" class="result"></iframe>
+          <span class="panel-label">result</span>
+        </div>
+        <div class="stdout-container">
+          <div id="stdout" class="stdout"></div>
+          <span class="panel-label">console</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="examples">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="cancel-example-selection">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">Code examples</h4>
+          </div>
+          <div class="modal-body examples-container">
+            <div id="examples-content" class="examples-content">
+            </div>
+            <div id="examples-content-progress" class="loading">
+              Loading... Please, wait.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var worker = new Worker('worker.js');
+      worker.addEventListener('message', function(e) {
+        console.log(e.data)
+        if (e.data.command == 'ok' && e.data.id == 'didload-classlib') {
+          worker.postMessage({
+            command:"compile",
+            id:'compiling',
+            text:'public class Main { public static void main(String[] args) { int a; System.out.println("From Within JavaScript");}}',
+            mainClass:'Main'
+          });
+        } else if (e.data.command == 'compilation-complete'){
+          if (e.data.status == 'errors') {
+            console.log("Had Errors", e)
+          } else {
+            var workerrun = new Worker('workerrun.js');
+            workerrun.addEventListener('message', function(e) {
+              console.log(e.data);
+            });
+
+            workerrun.postMessage({
+              command:'run',
+              id:'ran',
+              code: e.data.script
+            })
+          }
+        }
+      }, false);
+
+      
+      worker.postMessage({
+        command:'load-classlib',
+        id:'didload-classlib',
+        url:'http://127.0.0.1:8080/classlib.txt'
+      });
+      setTimeout(function() {
+        worker.postMessage({
+            command:"compile",
+            id:'compiling',
+            text:'public class Second { public static void main(String[] args) { System.out.println("Second Run"); }}',
+            mainClass:'Second'
+          });
+      }, 10000);
+      
+    </script>
+  </body>
+</html>
