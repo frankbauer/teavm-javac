@@ -88,7 +88,7 @@
           worker.postMessage({
             command:"compile",
             id:'compiling',
-            text:'public class Main { public static void main(String[] args) { int a; System.out.println("From Within JavaScript");}}',
+            text:'public class Main { public static void main(String[] args) { int[][] a = new int[3][4]; System.out.print(a.length );System.out.print("Gudi".toUpperCase() ); System.out.println("Gudi" + 3.2f);}}',
             mainClass:'Main'
           });
         } else if (e.data.command == 'compilation-complete'){
