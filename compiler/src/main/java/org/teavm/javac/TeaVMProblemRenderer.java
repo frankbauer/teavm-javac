@@ -15,6 +15,7 @@
  */
 package org.teavm.javac;
 
+import java.util.Collection;
 import java.util.Iterator;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
@@ -81,14 +82,23 @@ public final class TeaVMProblemRenderer {
                     break;
                 }
                 CallSite callSite = callSites.next();
-                if (callSite.getLocation() != null && callSite.getLocation().getFileName().equals(fileName)) {
-                    targetMessage.setFileName(callSite.getLocation().getFileName());
-                    targetMessage.setLineNumber(callSite.getLocation().getLine());
+                //Collection<? extends TextLocation> locations = callSite.getLocations(node);
+                TextLocation locations = callSite.getLocation();
+                TextLocation tl = null;
+                if (locations != null) {
+                    //tl = callSite.getLocations(node).stream().findFirst().get();
+                    tl = callSite.getLocation();
+                }
+                if (tl != null && tl.getFileName().equals(fileName)) {
+                    targetMessage.setFileName(tl.getFileName());
+                    targetMessage.setLineNumber(tl.getLine());
                     return;
                 }
                 sb.append("\n    at ");
-                renderCallLocation(callSite.getCaller().getMethod(), callSite.getLocation(), sb);
-                node = callSite.getCaller();
+                //CallGraphNode cgn = callSite.getCallers().stream().findFirst().get();
+                CallGraphNode cgn = callSite.getCaller();
+                renderCallLocation(cgn.getMethod(), tl, sb);
+                node = cgn;
             }
         }
     }

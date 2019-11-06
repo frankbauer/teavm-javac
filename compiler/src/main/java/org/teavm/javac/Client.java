@@ -260,6 +260,7 @@ public final class Client {
         stdlibMapping.setProperty("packagePrefix.java", "org.teavm.classlib");
         stdlibMapping.setProperty("classPrefix.java", "T");
 
+        //stdlibClassSource = new DirectoryClasspathClassHolderSource(new File("/teavm-stdlib"), stdlibMapping, null);
         stdlibClassSource = new DirectoryClasspathClassHolderSource(new File("/teavm-stdlib"), stdlibMapping);
     }
 
@@ -285,11 +286,15 @@ public final class Client {
 
     private static boolean generateJavaScript(CompileMessage request) {
         try {
+            Properties stdlibMapping = new Properties();
+            stdlibMapping.setProperty("packagePrefix.java", "org.teavm.classlib");
+            stdlibMapping.setProperty("classPrefix.java", "T");
+            
             long start = System.currentTimeMillis();
 
             List<ClassHolderSource> classSources = new ArrayList<>();
             classSources.add(stdlibClassSource);
-            classSources.add(new DirectoryClasspathClassHolderSource(new File("/out")));
+            classSources.add(new DirectoryClasspathClassHolderSource(new File("/out"), stdlibMapping));
 
             JavaScriptTarget jsTarget = new JavaScriptTarget();
             jsTarget.setMinifying(false);
@@ -492,7 +497,7 @@ public final class Client {
             if (file.isDirectory()) {
                 detectMainClass(file, mainClasses);
             } else if (file.getName().endsWith(".class")) {
-                MainMethodFinder finder = new MainMethodFinder();
+                org.teavm.javac.MainMethodFinder finder = new MainMethodFinder();
                 try (InputStream input = new FileInputStream(file)) {
                     ClassReader reader = new ClassReader(input);
                     reader.accept(finder, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG);

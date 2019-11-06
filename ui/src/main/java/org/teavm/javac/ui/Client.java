@@ -47,7 +47,7 @@ import org.teavm.jso.dom.html.HTMLIFrameElement;
 import org.teavm.jso.dom.html.HTMLMetaElement;
 import org.teavm.jso.json.JSON;
 import org.teavm.jso.workers.Worker;
-import org.teavm.platform.async.AsyncCallback;
+import org.teavm.interop.AsyncCallback;
 
 public final class Client {
     private Client() {

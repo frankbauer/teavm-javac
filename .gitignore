@@ -15,3 +15,4 @@ classlib/org
 classlib/dependency-reduced-pom.xml
 classlib/META-INF/services/org.teavm.vm.spi.TeaVMPlugin
 .settings
+sandbox/worker/src
