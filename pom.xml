@@ -27,7 +27,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
     <jdk.langtools.revision>53092d863cb6</jdk.langtools.revision>
-    <teavm.version>0.6.0-for-javac-107</teavm.version>
+    <teavm.version>0.6.0-for-javac-109</teavm.version>
     <teavm.obfuscated>true</teavm.obfuscated>
     <teavm.debug>false</teavm.debug>
   </properties>
