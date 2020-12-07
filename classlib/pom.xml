@@ -83,6 +83,7 @@
                   <includes>
                     <include>META-INF/services/*</include>
                     <include>org/teavm/classlib/**</include>
+                    <include>org/lgdv/**</include>
                     <include>org/teavm/jso/**</include>
                     <include>org/teavm/interop/**</include>
                     <include>org/teavm/platform/**</include>
