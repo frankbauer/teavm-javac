@@ -48,6 +48,7 @@ import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.classlib.impl.JCLPlugin;
 import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemSeverity;
+import org.teavm.interop.Async;
 import org.teavm.javac.protocol.CompilableObject;
 import org.teavm.javac.protocol.CompilationResultMessage;
 import org.teavm.javac.protocol.CompileMessage;
@@ -89,7 +90,7 @@ public final class Client {
         });
     }
 
-    private static void handleEvent(MessageEvent event) {
+    private static void handleEvent(MessageEvent event){
         WorkerMessage request = (WorkerMessage) event.getData();
         try {
             processResponse(request);
@@ -168,7 +169,6 @@ public final class Client {
 
     private static void init(WorkerMessage request, String url, Consumer<Boolean> next) {
         log("Initializing");
-
         initializationStartTime = System.currentTimeMillis();
         loadTeaVMClasslib(request, url, success -> {
             if (success) {
