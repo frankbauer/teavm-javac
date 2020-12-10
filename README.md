@@ -4,10 +4,13 @@ This is merely javac from OpenJDK compiled with [TeaVM](http://teavm.org).
 
 See live example [here](http://teavm.org/sandbox/).
 
+This version was changed to work for CodeBlocks.js
+
 ## Building
 
 ```
-$ mvn package
+$ mvn clean
+$ mvn package -DskipTests
 ```
 
 Resulting `.war` file can be found in `compiler/target/`.
