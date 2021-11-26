@@ -23,6 +23,7 @@ import org.objectweb.asm.Opcodes;
 public class MainMethodFinder extends ClassVisitor {
     public String className;
     public boolean hasMainMethod;
+    public boolean hasWrappingMainMethod;
 
     public MainMethodFinder() {
         super(Opcodes.ASM5);
@@ -37,7 +38,11 @@ public class MainMethodFinder extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         if (name.equals("main") && desc.equals("([Ljava/lang/String;)V")) {
-            hasMainMethod = true;
+            if (!MainOverrideInfo.MAIN_OVERRIDE_CLASS.equals(className)) {
+                hasMainMethod = true;
+            } else {
+                hasWrappingMainMethod = true;
+            }
         }
         return null;
     }

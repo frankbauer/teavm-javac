@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -48,7 +49,6 @@ import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.classlib.impl.JCLPlugin;
 import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemSeverity;
-import org.teavm.interop.Async;
 import org.teavm.javac.protocol.CompilableObject;
 import org.teavm.javac.protocol.CompilationResultMessage;
 import org.teavm.javac.protocol.CompileMessage;
@@ -76,7 +76,13 @@ import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
+class MainOverrideInfo {
+    public static final String MAIN_OVERRIDE_CLASS = "MainOverride";
+    public String overrideClass;
+}
+
 public final class Client {
+
     private static boolean isBusy;
     private static String mainClass;
     private static PositionIndexer positionIndexer;
@@ -138,8 +144,8 @@ public final class Client {
         CompilationResultMessage response = createMessage();
         response.setId(request.getId());
         response.setCommand("compilation-complete");
-
-        if (doCompile(request) && detectMainClass(request) && generateJavaScript(request)) {
+        MainOverrideInfo oInfo = new MainOverrideInfo();
+        if (doCompile(request) && detectMainClass(request, oInfo) && generateJavaScript(request, oInfo)) {
             response.setStatus("successful");
             response.setScript(readResultingFile());
         } else {
@@ -253,7 +259,7 @@ public final class Client {
 
     private static long lastPhaseTime = System.currentTimeMillis();
     private static TeaVMPhase lastPhase;
-    private static ClassHolderSource stdlibClassSource;
+    private static final ClassHolderSource stdlibClassSource;
 
     static {
         Properties stdlibMapping = new Properties();
@@ -264,9 +270,9 @@ public final class Client {
         stdlibClassSource = new DirectoryClasspathClassHolderSource(new File("/teavm-stdlib"), stdlibMapping);
     }
 
-    private static boolean detectMainClass(CompileMessage request) throws IOException {
+    private static boolean detectMainClass(CompileMessage request, MainOverrideInfo oInfo) throws IOException {
         Set<String> candidates = new HashSet<>();
-        detectMainClass(new File("/out"), candidates);
+        detectMainClass(new File("/out"), candidates, oInfo);
         if (candidates.size() != 1) {
             String text = candidates.isEmpty() ? "Main method not found" : "Multiple main methods found";
             TeaVMDiagnosticMessage message = createMessage();
@@ -284,7 +290,7 @@ public final class Client {
         return true;
     }
 
-    private static boolean generateJavaScript(CompileMessage request) {
+    private static boolean generateJavaScript(CompileMessage request, MainOverrideInfo oInfo) {
         try {
             Properties stdlibMapping = new Properties();
             stdlibMapping.setProperty("packagePrefix.java", "org.teavm.classlib");
@@ -311,7 +317,12 @@ public final class Client {
             /*teavm.entryPoint("main", new MethodReference(mainClass, "main", ValueType.parse(String[].class),
                     ValueType.VOID))
                     .withArrayValue(1, "java.lang.String");*/
-            teavm.entryPoint(request.getMainClass(), "main");
+            if (oInfo.overrideClass != null){
+                teavm.entryPoint(oInfo.overrideClass, "main");
+                log("TeaVM Detected Override Class: " + oInfo.overrideClass + "." + "main");
+            } else {
+                teavm.entryPoint(request.getMainClass(), "main");
+            }
             File outDir = new File("/js-out");
             outDir.mkdirs();
 
@@ -476,7 +487,8 @@ public final class Client {
     private static void createSourceFile(String content, String name) throws IOException {
         File file = new File("/" + name);
 
-        try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"))) {
+        try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),
+                StandardCharsets.UTF_8))) {
             writer.write(content);
         }
     }
@@ -492,10 +504,10 @@ public final class Client {
         dir.delete();
     }
 
-    private static void detectMainClass(File dir, Set<String> mainClasses) throws IOException {
+    private static void detectMainClass(File dir, Set<String> mainClasses, MainOverrideInfo oInfo) throws IOException {
         for (File file : dir.listFiles()) {
             if (file.isDirectory()) {
-                detectMainClass(file, mainClasses);
+                detectMainClass(file, mainClasses, oInfo);
             } else if (file.getName().endsWith(".class")) {
                 org.teavm.javac.MainMethodFinder finder = new MainMethodFinder();
                 try (InputStream input = new FileInputStream(file)) {
@@ -504,6 +516,8 @@ public final class Client {
                 }
                 if (finder.className != null && finder.hasMainMethod) {
                     mainClasses.add(finder.className);
+                } else if (finder.className != null && finder.hasWrappingMainMethod) {
+                   oInfo.overrideClass = finder.className;
                 }
             }
         }
@@ -519,7 +533,8 @@ public final class Client {
             return null;
         }
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(jsFile), "UTF-8"))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(jsFile),
+                StandardCharsets.UTF_8))) {
             while (true) {
                 String line = reader.readLine();
                 if (line == null) {
