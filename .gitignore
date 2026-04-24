@@ -11,3 +11,4 @@ node_modules
 .gradle/
 compiler/build/
 javac/build/
+dist/
