@@ -33,11 +33,15 @@ dependencies {
 }
 
 sourceSets {
+    classlibApi {
+    }
     classlibEmu {
     }
 }
 
 dependencies {
+    classlibApiCompileOnly libs.teavm.jso
+    classlibApiCompileOnly libs.teavm.jso.apis
     classlibEmuCompileOnly libs.teavm.jso
     classlibEmuCompileOnly libs.teavm.jso.apis
 }
@@ -62,9 +66,11 @@ def classlibOutDir = project.layout.buildDirectory.dir("classlib")
 tasks.register("generateClassLib", JavaExec) {
     def output = classlibOutDir.map { it.file("compile-classlib-teavm.bin") }
     dependsOn configurations.classlibInput
+    dependsOn sourceSets.classlibApi.output
     dependsOn sourceSets.classlibEmu.output
     inputs.files configurations.classlibInput
     inputs.files {
+        sourceSets.classlibApi.output.classesDirs.collect { fileTree(it) }
         sourceSets.classlibEmu.output.classesDirs.collect { fileTree(it) }
     }
     outputs.file output
@@ -72,6 +78,7 @@ tasks.register("generateClassLib", JavaExec) {
         [
             output.get().asFile.absolutePath,
             *configurations.classlibInput.files.collect { it.absolutePath },
+            *sourceSets.classlibApi.output.classesDirs.files.collect { it.absolutePath },
             *sourceSets.classlibEmu.output.classesDirs.files.collect { it.absolutePath }
         ].iterator()
     }
@@ -122,6 +129,9 @@ def prepareTeaVMClassLib = tasks.register("prepareTeaVMClassLib", Copy) {
         include "org/teavm/backend/wasm/WasmRuntime*.class"
         include "org/teavm/backend/wasm/WasmHeap*.class"
         include "com/jcraft/jzlib/**"
+    }
+    from(sourceSets.classlibApi.output) {
+        include "de/fau/tf/lgdv/**"
     }
     from(repackCldr) {
         eachFile {
