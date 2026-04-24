@@ -8,3 +8,6 @@
 build
 node_modules
 **/teavm-local.properties
+.gradle/
+compiler/build/
+javac/build/

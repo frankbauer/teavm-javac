@@ -66,4 +66,10 @@ public interface CompilerDiagnosticMessage extends WorkerMessage {
 
     @JSProperty
     void setMessage(String message);
+
+    @JSProperty
+    String getHumanReadable();
+
+    @JSProperty
+    void setHumanReadable(String humanReadable);
 }

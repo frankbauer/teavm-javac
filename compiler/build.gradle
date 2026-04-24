@@ -37,6 +37,11 @@ sourceSets {
     }
 }
 
+dependencies {
+    classlibEmuCompileOnly libs.teavm.jso
+    classlibEmuCompileOnly libs.teavm.jso.apis
+}
+
 compileJava {
     options.compilerArgs.addAll("--limit-modules", "java.base")
 }

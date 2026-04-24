@@ -103,6 +103,11 @@ sourceSets.main {
         srcDir baseSrcDir.dir("java.compiler/share/classes")
         srcDir baseSrcDir.dir("jdk.internal.opt/share/classes")
         exclude "module-info.java"
+            // SourceLauncher uses jdk.internal.misc.MethodFinder which was removed in JDK 25
+            exclude "**/launcher/SourceLauncher.java"
+                // *Preview.java files reference JDK 26 preview features not in our JDK 25 build
+                // javax.lang.model *Preview.java files reference LANGUAGE_MODEL which is JDK 26 preview
+                exclude "**/javax/lang/model/**/*Preview.java"
     }
 }
 
