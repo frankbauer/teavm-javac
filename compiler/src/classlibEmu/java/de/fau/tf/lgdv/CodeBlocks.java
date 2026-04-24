@@ -26,6 +26,10 @@ public class CodeBlocks {
     @JSBody(script = "return {  };")
     public static native <T extends JSObject> T createJSObject();
 
+    public static void postResult(de.fau.tf.lgdv.json.JsonSerializer jsonObject){
+        postResult(jsonObject.toJson());
+    }
+
     public static void postResult(String jsonObject){
         CodeBlocksStringMessage msg = createJSObject();
         msg.setCommand("f-FINAL");
