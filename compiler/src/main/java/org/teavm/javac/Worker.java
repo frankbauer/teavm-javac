@@ -97,6 +97,9 @@ public final class Worker {
     }
 
     private void compileAll(CompileMessage request) throws IOException {
+        compiler.clearSourceFiles();
+        compiler.clearOutputFiles();
+
         // Extract mainClass from request if provided, otherwise will be auto-detected
         String requestedMainClass = null;
         if (!JSObjects.isUndefined(request.getMainClass()) && request.getMainClass() != null) {

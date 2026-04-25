@@ -60,4 +60,28 @@ fi
 cp "$ROOT_DIR/template/worker.js" "$DIST_DIR/worker.js"
 cp "$ROOT_DIR/template/workerrun.js" "$DIST_DIR/workerrun.js"
 
+# Patch compiler.wasm-runtime.js to export the deobfuscator
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    sed -i '' 's/teavmMath=Math;return{/teavmMath=Math;globalThis.teavm_internal_state=a;return{/g' "$WORKER_DIR/compiler.wasm-runtime.js"
+    sed -i '' 's/takeStackTrace(){let [[:alnum:]_]*=(new Error).stack;let [[:alnum:]_]*=\[\];/takeStackTrace(){let t=(new Error).stack;globalThis.teavm_last_js_stack=t;let n=\[\];/g' "$WORKER_DIR/compiler.wasm-runtime.js"
+    sed -i '' 's/decorateException(e){/decorateException(e){globalThis.teavm_last_error=e;/g' "$WORKER_DIR/compiler.wasm-runtime.js"
+    sed -i '' 's/supplyStackDeobfuscator([[:alnum:]_]*){/supplyStackDeobfuscator(e){globalThis.teavm_deobfuscator=e;/g' "$WORKER_DIR/compiler.wasm-runtime.js"
+else
+    sed -i 's/teavmMath=Math;return{/teavmMath=Math;globalThis.teavm_internal_state=a;return{/g' "$WORKER_DIR/compiler.wasm-runtime.js"
+    sed -i 's/takeStackTrace(){let [[:alnum:]_]*=(new Error).stack;let [[:alnum:]_]*=\[\];/takeStackTrace(){let t=(new Error).stack;globalThis.teavm_last_js_stack=t;let n=\[\];/g' "$WORKER_DIR/compiler.wasm-runtime.js"
+    sed -i 's/decorateException(e){/decorateException(e){globalThis.teavm_last_error=e;/g' "$WORKER_DIR/compiler.wasm-runtime.js"
+    sed -i 's/supplyStackDeobfuscator([[:alnum:]_]*){/supplyStackDeobfuscator(e){globalThis.teavm_deobfuscator=e;/g' "$WORKER_DIR/compiler.wasm-runtime.js"
+fi
+
+if ! grep -q "teavm_internal_state" "$WORKER_DIR/compiler.wasm-runtime.js"; then
+    echo "FAILED to patch compiler.wasm-runtime.js"
+    exit 1
+fi
+
+if [[ -n "${DEPLOY_DIR:-}" ]]; then
+    mkdir -p "$DEPLOY_DIR/v102"
+    cp -r "$DIST_DIR/"* "$DEPLOY_DIR/v102/"
+    echo "dist/v102 has been copied to $DEPLOY_DIR/v102 successfully."
+fi
+
 echo "dist/v102 has been refreshed successfully."

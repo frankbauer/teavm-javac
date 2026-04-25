@@ -268,15 +268,17 @@ public final class Compiler {
                 .setClassSource(currentClassSource)
                 .setResourceProvider(currentResourceProvider)
                 .setReferenceCache(refCache)
-                .setObfuscated(true)
-                .setStrict(true)
+                .setObfuscated(false)
+                .setStrict(true)                
                 .build();
-        teavm.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
+        teavm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
+        new Patches().install(teavm);
         new JSOPlugin().install(teavm);
         new PlatformPlugin().install(teavm);
         new JCLPlugin().install(teavm);
         teavm.setEntryPoint(mainClass);
         target.setObfuscated(false);
+        target.setStrict(true);
         target.setDebugInfoLocation(WasmDebugInfoLocation.EMBEDDED);
         target.setDebugInfo(true);
         teavm.build(new MemoryBuildTarget(wasmOutputFiles), outputName);
