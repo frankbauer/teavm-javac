@@ -91,10 +91,28 @@ public class StdlibConverter extends ClassVisitor {
             signature = renameClassSignature(signature);
         }
 
-        if (superName.equals(name)) {
+        if (superName != null && superName.equals(name)) {
             superName = null;
         }
         super.visit(version, access, name, signature, superName, interfaces);
+    }
+
+    @Override
+    public void visitOuterClass(String owner, String name, String desc) {
+        super.visitOuterClass(rename(owner), name, desc != null ? renameMethodDesc(desc) : null);
+    }
+
+    @Override
+    public void visitInnerClass(String name, String outerName, String innerName, int access) {
+        super.visitInnerClass(rename(name), outerName != null ? rename(outerName) : null,
+                innerName != null ? renameSimpleName(innerName) : null, access);
+    }
+
+    private String renameSimpleName(String name) {
+        if (name.startsWith("T")) {
+            return name.substring(1);
+        }
+        return name;
     }
 
     @Override
@@ -143,7 +161,7 @@ public class StdlibConverter extends ClassVisitor {
 
     class FieldVisitorImpl extends FieldVisitor {
         FieldVisitorImpl(FieldVisitor fv) {
-            super(Opcodes.ASM5, fv);
+            super(Opcodes.ASM9, fv);
         }
 
         @Override
@@ -158,7 +176,7 @@ public class StdlibConverter extends ClassVisitor {
 
     class MethodVisitorImpl extends MethodVisitor {
         MethodVisitorImpl(MethodVisitor mv) {
-            super(Opcodes.ASM5, mv);
+            super(Opcodes.ASM9, mv);
         }
 
         @Override
@@ -173,7 +191,7 @@ public class StdlibConverter extends ClassVisitor {
 
     class AnnotationVisitorImpl extends AnnotationVisitor {
         AnnotationVisitorImpl(AnnotationVisitor av) {
-            super(Opcodes.ASM5, av);
+            super(Opcodes.ASM9, av);
         }
 
         @Override
@@ -196,13 +214,26 @@ public class StdlibConverter extends ClassVisitor {
 
     private String rename(String className) {
         if (className.startsWith(PREFIX)) {
-            int slashIndex = className.lastIndexOf('/');
-            if (className.charAt(slashIndex + 1) != 'T') {
-                return className;
+            String suffix = className.substring(PREFIX.length());
+            StringBuilder sb = new StringBuilder("java/");
+            boolean nextIsClass = true;
+            for (int i = 0; i < suffix.length(); ++i) {
+                char c = suffix.charAt(i);
+                if (c == '/' || c == '$') {
+                    sb.append(c);
+                    nextIsClass = true;
+                } else if (nextIsClass) {
+                    if (c == 'T') {
+                        // skip 'T'
+                    } else {
+                        sb.append(c);
+                    }
+                    nextIsClass = false;
+                } else {
+                    sb.append(c);
+                }
             }
-
-            return "java/" + className.substring(PREFIX.length(), slashIndex) + "/" + className.substring(
-                    slashIndex + 2);
+            return sb.toString();
         } else if (className.startsWith("org/threeten/bp/")) {
             return "java/time/" + className.substring("org/threeten/bp/".length());
         } else {
@@ -429,9 +460,11 @@ public class StdlibConverter extends ClassVisitor {
         }
 
         void renameSimpleClassType() {
+            StringBuilder name = new StringBuilder();
             while (current() != '<' && current() != '.' && current() != ';') {
-                nextChar();
+                name.append(signature.charAt(index++));
             }
+            sb.append(renameSimpleName(name.toString()));
 
             if (current() == '<') {
                 nextChar();
