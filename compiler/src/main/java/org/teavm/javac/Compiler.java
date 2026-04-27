@@ -17,6 +17,7 @@
 package org.teavm.javac;
 
 import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -227,6 +228,17 @@ public final class Compiler {
     }
 
     @JSExport
+    public String parseToAst() {
+        initCompiler();
+        try {
+            var units = compiler.parseOnly();
+            return new AstSerializer().serialize(units);
+        } finally {
+            compiler = null;
+        }
+    }
+
+    @JSExport
     public String[] detectMainClasses() throws IOException {
         var mainClasses = new ArrayList<String>();
         for (var file : outputFiles.values()) {
@@ -332,6 +344,11 @@ public final class Compiler {
             enterTrees(stopIfError(CompileState.ENTER, initModules(units)));
             generate(desugar(flow(attribute(todo))));
             return log.nerrors == 0;
+        }
+
+        com.sun.tools.javac.util.List<JCTree.JCCompilationUnit> parseOnly() {
+            var files = sourceFiles.values().stream().map(x -> (JavaFileObject) x).toList();
+            return parseFiles(files);
         }
     }
 

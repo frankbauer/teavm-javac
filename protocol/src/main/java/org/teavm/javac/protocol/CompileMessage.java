@@ -30,4 +30,10 @@ public interface CompileMessage extends WorkerMessage {
 
     @JSProperty
     void setMainClass(String mainClass);
+
+    @JSProperty
+    boolean isEmitAst();
+
+    @JSProperty
+    void setEmitAst(boolean emitAst);
 }

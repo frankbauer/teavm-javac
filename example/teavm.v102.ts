@@ -26,7 +26,7 @@ export class JavaV102Compiler implements ICompilerInstance {
     readonly allowsPersistentArguments = true
     readonly allowsMessagePassing = true
     readonly acceptsJSONArgument = true
-    readonly allowsREPL = false
+    readonly canEmitAST = true
     readonly experimental = true
     readonly deprecated = false
     didPreload: boolean = false
@@ -212,11 +212,18 @@ export class JavaV102Compiler implements ICompilerInstance {
         const mainClass = mainClassMatch ? mainClassMatch[1] : 'Main'
 
         const myListener = (e: any) => {
+            //console.log('Received message from compiler worker:', e.data.command, e.data, questionID)
             if (e.data.id != '' + questionID) {
                 return
             }
 
-            if (e.data.command == 'phase') {
+            if (e.data.command == 'ast') {
+                //console.log('Received AST from compiler:', e.data.ast)
+                const astCallback = options.ast_callback
+                if (astCallback) {
+                    astCallback(JSON.parse(e.data.ast))
+                }
+            } else if (e.data.command == 'phase') {
                 globalState.compilerState.displayGlobalState(
                     'Phase: <b>' + e.data.phase + '</b> for ' + mainClass
                 )
@@ -230,12 +237,12 @@ export class JavaV102Compiler implements ICompilerInstance {
                             e.data.humanReadable ||
                             'Compilation message',
                         start: {
-                            line: (e.data.lineNumber || 0) + 1,
-                            column: (e.data.columnNumber || 0) + 1,
+                            line: e.data.lineNumber || 0,
+                            column: (e.data.columnNumber || 0) - 1,
                         },
                         end: {
-                            line: (e.data.lineNumber || 0) + 1,
-                            column: (e.data.columnNumber || 0) + 1,
+                            line: e.data.lineNumber || 0,
+                            column: (e.data.columnNumber || 0) - 1,
                         },
                         severity: isError ? ErrorSeverity.Error : ErrorSeverity.Warning,
                     })
@@ -279,8 +286,15 @@ export class JavaV102Compiler implements ICompilerInstance {
                     const workerrun = this.getOrCreateRunWorker()
 
                     const runListener = (ee: any) => {
+                        //console.log('Received message from run worker:', ee.data, JSON.stringify(ee.data), questionID)
+
+                        if (ee.data.command == 'f-FINAL') {
+                            //console.log('Received final result from execution:', ee.data.value)
+                            options.resultData = JSON.parse(ee.data.value)
+                        }
+                        
                         if (ee.data.id != '' + questionID) {
-                            return
+                            console.warn('Received message for different session.', ee.data.id, questionID, JSON.stringify(ee.data))
                         }
 
                         if (ee.data.command == 'run-finished-setup') {
@@ -338,9 +352,7 @@ export class JavaV102Compiler implements ICompilerInstance {
                             if (options.beforeStartHandler) {
                                 options.beforeStartHandler()
                             }
-                        } else if (ee.data.command == 'f-FINAL') {
-                            options.resultData = JSON.parse(ee.data.value)
-                        }
+                        } 
                     }
 
                     workerrun.addEventListener('message', runListener)
@@ -383,7 +395,7 @@ export class JavaV102Compiler implements ICompilerInstance {
             globalState.compilerState.displayGlobalState(
                 'Starting Compiler for <b>' + mainClass + '.java</b>'
             )
-
+            console.log('Will receive AST:', options.sendAST===true && !!options.ast_callback)
             this.teaworker.postMessage({
                 command: 'compile',
                 id: '' + questionID,
@@ -391,6 +403,7 @@ export class JavaV102Compiler implements ICompilerInstance {
                 mainClass: mainClass,
                 strict: true,
                 debugInfo: true,
+                emitAst: options.sendAST===true && !!options.ast_callback,
             })
         }
     }

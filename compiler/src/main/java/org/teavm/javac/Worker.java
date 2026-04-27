@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.function.Consumer;
+import org.teavm.javac.protocol.AstResultMessage;
 import org.teavm.javac.protocol.CompilationResultMessage;
 import org.teavm.javac.protocol.CompileMessage;
 import org.teavm.javac.protocol.CompilerDiagnosticMessage;
@@ -118,6 +119,15 @@ public final class Worker {
         }
         
         createSourceFile(request.getText(), sourceFileName);
+
+        if (request.isEmitAst()) {
+            var astJson = compiler.parseToAst();
+            AstResultMessage astMsg = JSObjects.createWithoutProto();
+            astMsg.setCommand("ast");
+            astMsg.setId(request.getId());
+            astMsg.setAst(astJson);
+            Window.worker().postMessage(astMsg);
+        }
 
         CompilationResultMessage response = JSObjects.createWithoutProto();
         response.setId(request.getId());
