@@ -52,9 +52,39 @@ public class StdlibConverter extends ClassVisitor {
     boolean visible;
     String className;
     private Set<String> visitedMethods = new HashSet<>();
+    private java.util.Map<String, String> renamedMethods = new java.util.HashMap<>();
 
-    public StdlibConverter(ClassVisitor cv) {
+    public StdlibConverter(ClassVisitor cv, java.util.Map<String, String> renamedMethods) {
         super(Opcodes.ASM9, cv);
+        this.renamedMethods = renamedMethods;
+    }
+
+    static class MethodRenameFinder extends ClassVisitor {
+        java.util.Map<String, String> renamedMethods = new java.util.HashMap<>();
+
+        MethodRenameFinder() {
+            super(Opcodes.ASM9);
+        }
+
+        @Override
+        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+            return new MethodVisitor(Opcodes.ASM9) {
+                @Override
+                public AnnotationVisitor visitAnnotation(String annotationDesc, boolean visible) {
+                    if (annotationDesc.equals("Lorg/teavm/interop/Rename;")) {
+                        return new AnnotationVisitor(Opcodes.ASM9) {
+                            @Override
+                            public void visit(String attrName, Object value) {
+                                if (attrName.equals("value") && value instanceof String) {
+                                    renamedMethods.put(name + desc, (String) value);
+                                }
+                            }
+                        };
+                    }
+                    return null;
+                }
+            };
+        }
     }
 
     @Override
@@ -147,6 +177,12 @@ public class StdlibConverter extends ClassVisitor {
         if ((access & (Opcodes.ACC_SYNTHETIC | Opcodes.ACC_BRIDGE)) != 0) {
             return null;
         }
+
+        String renamed = renamedMethods.get(name + desc);
+        if (renamed != null && !name.equals("<init>") && !name.equals("<clinit>")) {
+            name = renamed;
+        }
+
         desc = renameMethodDesc(desc);
         if (signature != null) {
             signature = renameMethodSignature(signature);
@@ -165,8 +201,15 @@ public class StdlibConverter extends ClassVisitor {
         return new MethodVisitorImpl(super.visitMethod(access, name, desc, signature, exceptions));
     }
 
+    private boolean isTeaVMAnnotation(String desc) {
+        return desc.startsWith("Lorg/teavm/");
+    }
+
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        if (isTeaVMAnnotation(desc)) {
+            return null;
+        }
         return super.visitAnnotation(desc, visible);
     }
 
@@ -177,7 +220,7 @@ public class StdlibConverter extends ClassVisitor {
 
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-            if (!visible) {
+            if (!visible || isTeaVMAnnotation(desc)) {
                 return null;
             }
             desc = renameDesc(desc);
@@ -192,7 +235,7 @@ public class StdlibConverter extends ClassVisitor {
 
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-            if (!visible) {
+            if (!visible || isTeaVMAnnotation(desc)) {
                 return null;
             }
             desc = renameDesc(desc);
@@ -207,7 +250,7 @@ public class StdlibConverter extends ClassVisitor {
 
         @Override
         public AnnotationVisitor visitAnnotation(String name, String desc) {
-            if (!visible) {
+            if (!visible || isTeaVMAnnotation(desc)) {
                 return null;
             }
             desc = renameDesc(desc);
@@ -547,9 +590,13 @@ public class StdlibConverter extends ClassVisitor {
     }
 
     private static void addFile(InputStream input, ArchiveBuilder output, Set<String> packageNames) throws IOException {
-        ClassReader reader = new ClassReader(input);
+        byte[] bytes = input.readAllBytes();
+        ClassReader reader = new ClassReader(bytes);
+        MethodRenameFinder finder = new MethodRenameFinder();
+        reader.accept(finder, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+
         ClassWriter writer = new ClassWriter(0);
-        StdlibConverter converter = new StdlibConverter(writer);
+        StdlibConverter converter = new StdlibConverter(writer, finder.renamedMethods);
         reader.accept(converter, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES
                 | ClassReader.SKIP_DEBUG);
         if (converter.visible) {
