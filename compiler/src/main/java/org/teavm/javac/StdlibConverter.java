@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -50,6 +51,7 @@ public class StdlibConverter extends ClassVisitor {
     };
     boolean visible;
     String className;
+    private Set<String> visitedMethods = new HashSet<>();
 
     public StdlibConverter(ClassVisitor cv) {
         super(Opcodes.ASM9, cv);
@@ -69,6 +71,7 @@ public class StdlibConverter extends ClassVisitor {
 
         visible = true;
         className = name;
+        visitedMethods.clear();
         if (superName != null) {
             superName = rename(superName);
         }
@@ -141,9 +144,17 @@ public class StdlibConverter extends ClassVisitor {
         if ((access & Opcodes.ACC_PUBLIC) == 0 && ((access & Opcodes.ACC_PROTECTED) == 0)) {
             return null;
         }
+        if ((access & (Opcodes.ACC_SYNTHETIC | Opcodes.ACC_BRIDGE)) != 0) {
+            return null;
+        }
         desc = renameMethodDesc(desc);
         if (signature != null) {
             signature = renameMethodSignature(signature);
+        }
+
+        String key = name + desc;
+        if (!visitedMethods.add(key)) {
+            return null;
         }
 
         if (exceptions != null) {
@@ -405,6 +416,8 @@ public class StdlibConverter extends ClassVisitor {
                 case 'C':
                 case 'S':
                 case 'I':
+                    nextChar();
+                    break;
                 case 'J':
                 case 'F':
                 case 'D':
