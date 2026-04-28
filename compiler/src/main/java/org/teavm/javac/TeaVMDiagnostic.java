@@ -55,7 +55,7 @@ public class TeaVMDiagnostic extends BaseDiagnostic {
             problem.render(consumer);
             message = consumer.getText();
         }
-        return problem.getText();
+        return message;
     }
 
     @Override

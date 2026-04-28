@@ -199,7 +199,7 @@ public final class Worker {
     }
 
     private void handleTeaVMDiagnostic(TeaVMDiagnostic diagnostic, String requestId) {
-        CompilerDiagnosticMessage response = JSObjects.createWithoutProto();
+        TeaVMDiagnosticMessage response = JSObjects.createWithoutProto();
         response.setCommand("diagnostic");
         response.setId(requestId);
 
@@ -207,10 +207,8 @@ public final class Worker {
         response.setFileName(diagnostic.getFileName());
 
         response.setLineNumber(diagnostic.getLineNumber());
-        response.setColumnNumber(0);
 
-        response.setMessage(diagnostic.getMessage());
-        response.setHumanReadable(buildDiagnosticString(response));
+        response.setText(diagnostic.getMessage());
 
         Window.worker().postMessage(response);
     }
