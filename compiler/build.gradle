@@ -70,8 +70,10 @@ tasks.register("generateClassLib", JavaExec) {
     dependsOn sourceSets.classlibEmu.output
     inputs.files configurations.classlibInput
     inputs.files {
-        sourceSets.classlibApi.output.classesDirs.collect { fileTree(it) }
-        sourceSets.classlibEmu.output.classesDirs.collect { fileTree(it) }
+        [
+            *sourceSets.classlibApi.output.classesDirs.collect { fileTree(it) },
+            *sourceSets.classlibEmu.output.classesDirs.collect { fileTree(it) }
+        ]
     }
     outputs.file output
     args {
