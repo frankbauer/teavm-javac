@@ -15,9 +15,10 @@
  */
 package de.fau.tf.lgdv.math;
 
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
-public class Cone extends Geometry implements JSON.Stringable{
+public class Cone extends Geometry implements JsonObjectable{
     /**
      * The Radius of the Cone
      */
@@ -105,7 +106,8 @@ public class Cone extends Geometry implements JSON.Stringable{
         return apex.sub(origin).normalize();
     }
 
-    public String toJSON(){
-        return "{\"radius\":"+radius+", \"apex\":"+apex.toJSON()+", \"origin\":"+origin.toJSON()+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return super.toJsonObject().put("radius", radius).put("apex", apex);
     }
 }

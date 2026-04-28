@@ -17,7 +17,7 @@ package de.fau.tf.lgdv.runtime;
 
 import de.fau.tf.lgdv.json.*;
 
-public abstract class RemoteObject implements JsonSerializer {
+public abstract class RemoteObject implements JsonObjectable {
     private static int NEXT_PLAYER_ID = 1;
     public final String TYPE;
     public final int ID;
@@ -37,9 +37,5 @@ public abstract class RemoteObject implements JsonSerializer {
         JsonObject obj =  this.toJsonReference();
         this.addAttributes(obj);
         return obj;
-    }
-
-    public String toJson(){
-        return toJsonObject().toJson();
     }
 }

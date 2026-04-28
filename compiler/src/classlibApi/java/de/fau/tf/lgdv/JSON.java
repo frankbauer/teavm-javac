@@ -18,7 +18,9 @@ package de.fau.tf.lgdv;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 public class JSON {
+    @Deprecated
     public static interface Stringable {
         String toJSON();
     }

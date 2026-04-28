@@ -16,8 +16,13 @@
  */
 package de.fau.tf.lgdv.json;
 
-public class JsonArray implements java.lang.Iterable<JsonElement>, java.util.List<JsonElement>, JsonSerializer{
+public class JsonArray implements java.lang.Iterable<JsonElement>, java.util.List<JsonElement>, JsonArrayable{
     private final java.util.List<JsonElement> list = new java.util.ArrayList<>(2);
+
+    @Override
+    public JsonArray toJsonArray() {
+        return this;
+    }
 
     @Override
     public int size() {
@@ -59,8 +64,16 @@ public class JsonArray implements java.lang.Iterable<JsonElement>, java.util.Lis
         return list.add(new JsonElement(o));
     }
 
+    public boolean add(JsonObjectable o){
+        return add(o.toJsonObject());
+    }
+
     public boolean add(JsonArray o){
         return list.add(new JsonElement(o));
+    }
+
+    public boolean add(JsonArrayable o){
+        return add(o.toJsonArray());
     }
 
     public boolean add(String o){

@@ -15,7 +15,8 @@
  */
 package de.fau.tf.lgdv.math;
 
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
 /**
  * Represents a Plane in 3D-Space.
@@ -23,7 +24,7 @@ import de.fau.tf.lgdv.JSON;
  * @author frank
  *
  */
-public class Plane extends Geometry implements JSON.Stringable {
+public class Plane extends Geometry implements JsonObjectable {
     /**
      * The Planes normal. This value is guaranteed to be normalized!
      */
@@ -102,7 +103,8 @@ public class Plane extends Geometry implements JSON.Stringable {
         return yAxis;
     }
 
-    public String toJSON(){
-        return "{\"xAxis\":"+xAxis.toJSON()+", \"yAxis\":"+yAxis.toJSON()+"\"normal\":"+normal.toJSON()+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return super.toJsonObject().put("xAxis", xAxis).put("yAxis", yAxis).put("normal", normal);
     }
 }

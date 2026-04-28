@@ -16,7 +16,8 @@
 package de.fau.tf.lgdv.math;
 
 import java.awt.Point;
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
 /**
  * Represents an immutable 2-Dimensional Vector
@@ -24,7 +25,7 @@ import de.fau.tf.lgdv.JSON;
  * @author frank
  *
  */
-public class Vec2D implements JSON.Stringable{
+public class Vec2D implements JsonObjectable{
     /**
      * A Vector pointing in the positive X-Direction
      */
@@ -279,7 +280,8 @@ public class Vec2D implements JSON.Stringable{
         return p.add(pivot);
     }
 
-    public String toJSON(){
-        return "{\"x\":" + this.x + ",\"y\":"+this.y+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return new JsonObject().put("x", this.x).put("y", this.y);
     }
 }

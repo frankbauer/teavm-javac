@@ -21,6 +21,7 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
+import de.fau.tf.lgdv.json.JsonSerializer;
 
 public class CodeBlocks {
     @JSBody(script = "return {  };")
@@ -152,7 +153,7 @@ public class CodeBlocks {
         return msg;
     }
 
-    public static void postMessage(String cmd, int id, Vec2D value){
-        postMessage(createMessage(cmd, id, value.toJSON()));
+    public static void postMessage(String cmd, int id, JsonSerializer value){
+        postMessage(createMessage(cmd, id, value.toJson()));
     }
 }

@@ -15,7 +15,8 @@
  */
 package de.fau.tf.lgdv.math;
 
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
 /**
  * Store an integer position
@@ -23,7 +24,7 @@ import de.fau.tf.lgdv.JSON;
  * @author frank
  *
  */
-public class Int2D implements JSON.Stringable{
+public class Int2D implements JsonObjectable{
     public final int x;
     public final int y;
 
@@ -32,7 +33,8 @@ public class Int2D implements JSON.Stringable{
         this.y = y;
     }
 
-    public String toJSON(){
-        return "{\"x\":" + this.x + ",\"y\":"+this.y+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return new JsonObject().put("x", this.x).put("y", this.y);
     }
 }

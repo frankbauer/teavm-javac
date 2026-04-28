@@ -15,9 +15,10 @@
  */
 package de.fau.tf.lgdv.math;
 
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
-public class Line2D implements JSON.Stringable{
+public class Line2D implements JsonObjectable{
     public final Vec2D origin;
     public final Vec2D dir;
 
@@ -73,7 +74,8 @@ public class Line2D implements JSON.Stringable{
         return new Line2D(origin, dir.toUnitLength().mul(len));
     }
 
-    public String toJSON(){
-        return "{\"origin\":"+ origin.toJSON()+", \"dir\":"+dir.toJSON()+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return new JsonObject().put("origin", origin).put("dir", dir);
     }
 }

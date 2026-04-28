@@ -15,17 +15,30 @@
  */
 package de.fau.tf.lgdv.json;
 
-public class JsonObject implements JsonSerializer{
+public class JsonObject implements JsonObjectable{
     private final java.util.Map<String, JsonElement> map = new java.util.HashMap<>();
+
+    @Override
+    public JsonObject toJsonObject() {
+        return this;
+    }
 
     public JsonObject put(String key, JsonArray o){
         map.put(JsonParser.validKey(key), new JsonElement(o));
         return this;
     }
 
+    public JsonObject put(String key, JsonArrayable o){
+        return put(key, o.toJsonArray());
+    }
+
     public JsonObject put(String key, JsonObject o){
         map.put(JsonParser.validKey(key), new JsonElement(o));
         return this;
+    }
+
+    public JsonObject put(String key, JsonObjectable o){
+        return put(key, o.toJsonObject());
     }
 
     public JsonObject putNull(String key){

@@ -15,7 +15,8 @@
  */
 package de.fau.tf.lgdv.math;
 
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
 /**
  * Represents an immutable, 3-Dimensional Vector
@@ -23,7 +24,7 @@ import de.fau.tf.lgdv.JSON;
  * @author frank
  *
  */
-public class Vec3D implements JSON.Stringable {
+public class Vec3D implements JsonObjectable {
     /**
      * A Vector pointing in the positive X-Direction
      */
@@ -368,7 +369,8 @@ public class Vec3D implements JSON.Stringable {
         return Math.abs(signedDistance(p));
     }
 
-    public String toJSON(){
-        return "{\"x\":" + this.x + ",\"y\":"+this.y+ ",\"z\":"+this.z+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return new JsonObject().put("x", this.x).put("y", this.y).put("z", this.z);
     }
 }

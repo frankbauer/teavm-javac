@@ -15,9 +15,10 @@
  */
 package de.fau.tf.lgdv.math;
 
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
-public class Geometry implements JSON.Stringable {
+public class Geometry implements JsonObjectable {
     public final Vec3D origin;
 
     public Geometry(final Vec3D origin) {
@@ -38,7 +39,8 @@ public class Geometry implements JSON.Stringable {
         return this.getClass().getSimpleName() + "@" + origin;
     }
 
-    public String toJSON(){
-        return "{\"origin\":"+origin.toJSON()+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return new JsonObject().put("origin", origin);
     }
 }

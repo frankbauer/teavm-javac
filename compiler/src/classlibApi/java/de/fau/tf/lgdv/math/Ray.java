@@ -15,14 +15,15 @@
  */
 package de.fau.tf.lgdv.math;
 
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
 /**
  * 
  * Describes a Ray in Space (Point and Direction)
  * 
  */
-public class Ray extends Geometry  implements JSON.Stringable{
+public class Ray extends Geometry  implements JsonObjectable{
     /**
      * The direction of the Ray
      */
@@ -447,7 +448,8 @@ public class Ray extends Geometry  implements JSON.Stringable{
         return res;
     }
 
-    public String toJSON(){
-        return "{\"origin\":"+origin.toJSON()+", \"dir\":"+dir.toJSON()+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return super.toJsonObject().put("dir", dir);
     }
 }

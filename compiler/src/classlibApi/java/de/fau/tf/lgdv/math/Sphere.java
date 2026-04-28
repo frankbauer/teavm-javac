@@ -15,9 +15,10 @@
  */
 package de.fau.tf.lgdv.math;
 
-import de.fau.tf.lgdv.JSON;
+import de.fau.tf.lgdv.json.JsonObject;
+import de.fau.tf.lgdv.json.JsonObjectable;
 
-public class Sphere extends Geometry implements JSON.Stringable {
+public class Sphere extends Geometry implements JsonObjectable {
     /**
      * The Radius of the Sphere
      */
@@ -48,7 +49,8 @@ public class Sphere extends Geometry implements JSON.Stringable {
         return radius;
     }
 
-    public String toJSON(){
-        return "{\"radius\":"+radius+", \"origin\":"+origin.toJSON()+"}";
+    @Override
+    public JsonObject toJsonObject() {
+        return super.toJsonObject().put("radius", radius);
     }
 }
