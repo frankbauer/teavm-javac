@@ -275,10 +275,19 @@ public final class Worker {
             return true;
         }
 
-        // Use the explicitly-requested main class if provided
+        // Use the explicitly-requested main class if provided and it exists among candidates
         if (requestedMainClass != null) {
-            mainClass = requestedMainClass.replace('/', '.');
-            return true;
+            var normalizedRequestedMainClass = requestedMainClass.replace('/', '.');
+            for (var candidate : allCandidates) {
+                var candidateFull = candidate.replace('/', '.');
+                var candidateSimple = candidateFull.contains(".")
+                        ? candidateFull.substring(candidateFull.lastIndexOf('.') + 1)
+                        : candidateFull;
+                if (candidateFull.equals(normalizedRequestedMainClass) || candidateSimple.equals(normalizedRequestedMainClass)) {
+                    mainClass = candidateFull;
+                    return true;
+                }
+            }
         }
 
         // Auto-detect from compiled code

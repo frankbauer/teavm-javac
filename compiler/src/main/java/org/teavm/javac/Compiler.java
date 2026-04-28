@@ -289,6 +289,9 @@ public final class Compiler {
         new PlatformPlugin().install(teavm);
         new JCLPlugin().install(teavm);
         teavm.setEntryPoint(mainClass);
+        if (currentClassSource.get(mainClass) == null) {
+            return false;
+        }
         target.setObfuscated(false);
         target.setStrict(true);
         target.setDebugInfoLocation(WasmDebugInfoLocation.EMBEDDED);
