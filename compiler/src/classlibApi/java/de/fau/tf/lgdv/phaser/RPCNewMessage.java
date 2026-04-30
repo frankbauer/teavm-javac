@@ -18,9 +18,14 @@ package de.fau.tf.lgdv.phaser;
 import org.teavm.jso.JSProperty;
 
 interface RPCNewMessage extends RPCTileMessage {
-    @JSProperty
-    String getType();
+    @JSProperty("type")
+    String _getType();
 
-    @JSProperty
+    default String getType() {
+        String s = _getType();
+        return s != null ? new String(s) : null;
+    }
+
+    @JSProperty("type")
     void setType(String value);
 }

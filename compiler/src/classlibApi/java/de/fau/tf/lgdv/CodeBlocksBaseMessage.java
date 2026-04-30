@@ -18,10 +18,15 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
 public interface CodeBlocksBaseMessage extends JSObject {
-    @JSProperty
-    String getCommand();
+    @JSProperty("command")
+    String _getCommand();
 
-    @JSProperty
+    default String getCommand() {
+        String s = _getCommand();
+        return s != null ? new String(s) : null;
+    }
+
+    @JSProperty("command")
     void setCommand(String command);
 
     @JSProperty

@@ -53,11 +53,13 @@ public class CodeBlocks {
         }
         listener = (MessageEvent event) -> {
             CodeBlocksBaseMessage request = (CodeBlocksBaseMessage) event.getData();
-            String cmd = request.getCommand();
-            if (cmd.startsWith("d-")) {
-                cmd = cmd.substring(2);
-                request.setCommand(cmd);
-                handler.handleEvent(request);
+            if (request != null) {
+                String cmd = request.getCommand();
+                if (cmd != null && cmd.startsWith("d-")) {
+                    cmd = cmd.substring(2);
+                    request.setCommand(cmd);
+                    handler.handleEvent(request);
+                }
             }
         };
         Window.worker().addEventListener("message", listener);

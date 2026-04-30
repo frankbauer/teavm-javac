@@ -19,9 +19,14 @@ import de.fau.tf.lgdv.CodeBlocksBaseMessage;
 import org.teavm.jso.JSProperty;
 
 interface RPCIDMessage extends CodeBlocksBaseMessage {
-    @JSProperty
-    String getID();
+    @JSProperty("ID")
+    String _getID();
 
-    @JSProperty
+    default String getID() {
+        String s = _getID();
+        return s != null ? new String(s) : null;
+    }
+
+    @JSProperty("ID")
     void setID(String value);
 }
