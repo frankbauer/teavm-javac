@@ -22,10 +22,28 @@ import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
 import de.fau.tf.lgdv.json.JsonSerializer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import de.fau.tf.lgdv.runtime.RemoteObject;
 
 public class CodeBlocks {
     @JSBody(script = "return {  };")
     public static native <T extends JSObject> T createJSObject();
+
+    private static Map<Integer, RemoteObject> eventHandlers = new HashMap<>();
+
+    public static void exit(int code){
+        CodeBlocksStringMessage msg = createJSObject();
+        msg.setCommand("f-EXIT");
+        msg.setId(-1);
+        Window.worker().postMessage(msg);
+        if (listener != null) {
+            stopReceivingEvents();
+        }
+        System.exit(code);
+    }
 
     public static void postResult(de.fau.tf.lgdv.json.JsonSerializer jsonObject){
         postResult(jsonObject.toJson());
@@ -39,6 +57,11 @@ public class CodeBlocks {
         Window.worker().postMessage(msg);
     }
 
+    public static void postMessage(RemoteObject.NewRemoteObjectMessage message, RemoteObject handler){
+        eventHandlers.put(handler.ID, handler);
+        CodeBlocks.postMessage(message);
+    }
+
     public static void postMessage(CodeBlocksBaseMessage message){
         if (!message.getCommand().startsWith("w-")){
             message.setCommand("w-"+message.getCommand());
@@ -47,9 +70,15 @@ public class CodeBlocks {
     }
 
     private static EventListener<?> listener;
+    private static List<CodeBlocksEventFunction> eventFunctions = new ArrayList<>();
     public static void startReceivingEvents(CodeBlocksEventFunction handler){
+        if (!eventFunctions.contains(handler)) {
+            eventFunctions.add(handler);
+        }
+        
         if (listener != null) {
-            stopReceivingEvents();
+        //    stopReceivingEvents();
+            return;
         }
         listener = (MessageEvent event) -> {
             CodeBlocksBaseMessage request = (CodeBlocksBaseMessage) event.getData();
@@ -57,8 +86,24 @@ public class CodeBlocks {
                 String cmd = request.getCommand();
                 if (cmd != null && cmd.startsWith("d-")) {
                     cmd = cmd.substring(2);
-                    request.setCommand(cmd);
-                    handler.handleEvent(request);
+                    if (cmd.equals("o")) {
+                        RemoteObject.ObjectReplyMessage orm = (RemoteObject.ObjectReplyMessage) request;
+                        int id = orm.getId();
+                        RemoteObject rObj = eventHandlers.get(id);
+                        if (rObj != null ) {                            
+                            if (rObj.TYPE.equals(orm.getType())) {
+                                rObj.handleEvent(orm.getCmd(), orm.getJSON());
+                            } else {
+                                System.err.println("Internal Error: Received object reply '" + orm.getCmd() + "' with wrong type: " + orm.getType() + " expected: " + rObj.TYPE);
+                            }
+                        } else {
+                            System.err.println("Internal Error: Received object reply '" + orm.getCmd() + "' for unknown id: " + id);
+                        }
+                    } else {
+                        request.setCommand(cmd);
+                        eventFunctions.forEach(f -> f.handleEvent(request));
+                        //handler.handleEvent(request);
+                    }
                 }
             }
         };

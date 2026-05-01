@@ -174,7 +174,7 @@ public class MapGame {
             }
             case "exit": {
                 System.out.println("SHUTDOWN");
-                System.exit(0);
+                CodeBlocks.exit(0);
                 return;
             }
         }
