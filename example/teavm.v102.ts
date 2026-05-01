@@ -32,6 +32,7 @@ export class JavaV102Compiler implements ICompilerInstance {
     didPreload: boolean = false
     private teaworker: Worker | undefined = undefined
     private teaworkerrun: Worker | undefined = undefined
+    private currentOptions: ICompileAndRunArguments | undefined = undefined
     isReady = false
     isRunning = false
 
@@ -103,6 +104,7 @@ export class JavaV102Compiler implements ICompilerInstance {
                     this.isReady = false
                 }
                 this.isRunning = false
+                this.triggerAfterStop()
                 if (msg) {
                     console.warn(msg)
                 }
@@ -135,6 +137,8 @@ export class JavaV102Compiler implements ICompilerInstance {
                 this.teaworkerrun.terminate()
                 this.teaworkerrun = undefined
             }
+            this.isRunning = false
+            this.triggerAfterStop()
             if (msg) {
                 console.warn(msg)
             }
@@ -173,6 +177,7 @@ export class JavaV102Compiler implements ICompilerInstance {
             return
         }
         this.isRunning = true
+        this.currentOptions = options
         if (runCreate) {
             if (
                 this.createTeaWorker(() => {
@@ -228,7 +233,8 @@ export class JavaV102Compiler implements ICompilerInstance {
                     'Phase: <b>' + e.data.phase + '</b> for ' + mainClass
                 )
             } else if (e.data.command == 'diagnostic' || e.data.command == 'compiler-diagnostic') {
-                const isError = e.data.severity == 'ERROR'
+                console.log('Received diagnostic message from compiler:', e.data)
+                const isError = e.data.severity == 'ERROR' || e.data.severity == 'error'
                 if (compileFailedCallback) {
                     compileFailedCallback({
                         message:
@@ -276,6 +282,7 @@ export class JavaV102Compiler implements ICompilerInstance {
                 if (e.data.status == 'errors') {
                     finishedExecutionCB(false, undefined, options.args)
                     this.isRunning = false
+                    this.triggerAfterStop()
                     globalState.compilerState.hideGlobalState()
                     globalState.compilerState.setAllRunButtons(true)
                 } else {
@@ -291,10 +298,16 @@ export class JavaV102Compiler implements ICompilerInstance {
                         if (ee.data.command == 'f-FINAL') {
                             //console.log('Received final result from execution:', ee.data.value)
                             options.resultData = JSON.parse(ee.data.value)
-                        }
-                        
-                        if (ee.data.id != '' + questionID) {
-                            console.warn('Received message for different session.', ee.data.id, questionID, JSON.stringify(ee.data))
+                        } else if (ee.data.command == 'f-EXIT') {
+                            console.log('Received exit code from execution:', ee.data.value)
+                            this.stop()
+                        } else if (ee.data.id != '' + questionID) {
+                            console.warn(
+                                'Received message for different session.',
+                                ee.data.id,
+                                questionID,
+                                JSON.stringify(ee.data)
+                            )
                         }
 
                         if (ee.data.command == 'run-finished-setup') {
@@ -318,6 +331,7 @@ export class JavaV102Compiler implements ICompilerInstance {
                             console.log('Execution finished in ' + (Date.now() - start) + ' ms\n')
                             executionFinished = true
                             this.isRunning = false
+                            this.triggerAfterStop()
                             if (!options.keepAlive) {
                                 workerrun.removeEventListener('message', runListener)
                                 workerrun.end('')
@@ -328,6 +342,50 @@ export class JavaV102Compiler implements ICompilerInstance {
                             log_callback(ee.data.line + '\n')
                         } else if (ee.data.command == 'stderr') {
                             err_callback(ee.data.line + '\n')
+                        } else if (
+                            ee.data.command == 'diagnostic' ||
+                            ee.data.command == 'compiler-diagnostic'
+                        ) {
+                            console.log('Received diagnostic message from run worker:', ee.data)
+                            const isError =
+                                ee.data.severity == 'ERROR' ||
+                                ee.data.severity == 'error' ||
+                                ee.data.kind == 'ERROR'
+                            if (compileFailedCallback) {
+                                compileFailedCallback({
+                                    message:
+                                        ee.data.message ||
+                                        ee.data.text ||
+                                        ee.data.humanReadable ||
+                                        'Runtime message',
+                                    start: {
+                                        line: ee.data.lineNumber || ee.data.line || 0,
+                                        column: (ee.data.columnNumber || 0) - 1,
+                                    },
+                                    end: {
+                                        line: ee.data.lineNumber || ee.data.line || 0,
+                                        column: (ee.data.columnNumber || 0) - 1,
+                                    },
+                                    severity: isError ? ErrorSeverity.Error : ErrorSeverity.Warning,
+                                })
+                            }
+                        } else if (ee.data.command == 'exception') {
+                            if (options.compileFailedCallback) {
+                                options.compileFailedCallback({
+                                    message: ee.data.text,
+                                    start: {
+                                        line: ee.data.line || 0,
+                                        column: 0,
+                                    },
+                                    end: {
+                                        line: ee.data.line || 0,
+                                        column: 0,
+                                    },
+                                    severity: ErrorSeverity.Error,
+                                })
+                            }
+                            finishedExecutionCB(false, undefined, options.args)
+                            this.stop()
                         } else if (
                             typeof ee.data.command === 'string' &&
                             ee.data.command.indexOf('w-') === 0
@@ -352,7 +410,7 @@ export class JavaV102Compiler implements ICompilerInstance {
                             if (options.beforeStartHandler) {
                                 options.beforeStartHandler()
                             }
-                        } 
+                        }
                     }
 
                     workerrun.addEventListener('message', runListener)
@@ -362,8 +420,9 @@ export class JavaV102Compiler implements ICompilerInstance {
                         id: '' + questionID,
                         code: e.data.script,
                         args: args,
-                        messagePosting: options.allowsMessagePassing,
+                        messagePosting: options.allowMessagePassing,
                         keepAlive: options.keepAlive,
+                        mainClass: mainClass,
                     })
 
                     const runStart = Date.now()
@@ -395,7 +454,7 @@ export class JavaV102Compiler implements ICompilerInstance {
             globalState.compilerState.displayGlobalState(
                 'Starting Compiler for <b>' + mainClass + '.java</b>'
             )
-            console.log('Will receive AST:', options.sendAST===true && !!options.ast_callback)
+            console.log('Will receive AST:', options.sendAST === true && !!options.ast_callback)
             this.teaworker.postMessage({
                 command: 'compile',
                 id: '' + questionID,
@@ -403,8 +462,15 @@ export class JavaV102Compiler implements ICompilerInstance {
                 mainClass: mainClass,
                 strict: true,
                 debugInfo: true,
-                emitAst: options.sendAST===true && !!options.ast_callback,
+                emitAst: options.sendAST === true && !!options.ast_callback,
             })
+        }
+    }
+
+    private triggerAfterStop() {
+        if (this.currentOptions) {
+            this.currentOptions.afterStopHandler()
+            this.currentOptions = undefined
         }
     }
 
@@ -420,6 +486,7 @@ export class JavaV102Compiler implements ICompilerInstance {
             }
             this.isRunning = false
         }
+        this.triggerAfterStop()
         globalState.compilerState.hideGlobalState()
         globalState.compilerState.setAllRunButtons(true)
     }
