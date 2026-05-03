@@ -18,6 +18,7 @@ package de.fau.tf.lgdv.runtime;
 import de.fau.tf.lgdv.CodeBlocks;
 import de.fau.tf.lgdv.CodeBlocksBaseMessage;
 import de.fau.tf.lgdv.json.*;
+import de.fau.tf.lgdv.runtime.annotations.JSEvent;
 
 public abstract class RemoteObject { 
     private static int NEXT_OBJECT_ID = 1;
@@ -45,15 +46,30 @@ public abstract class RemoteObject {
         CodeBlocks.postMessage(message, this);        
     }
 
-    protected JsonElement waitForCreated() {
-        if (creationQueryId > -1) {
+    protected boolean didReceiveReady() { return creationQueryId < 0; }
+
+    private void _onCreated(JsonElement json) {        
+        creationQueryId = -1;
+        this.onCreated(json);        
+    }
+
+    protected void onCreated(JsonElement json) {
+    }
+
+    protected void waitForCreated() {
+        if (!didReceiveReady()) {
             //System.out.println("Waiting for object "+TYPE+"#"+ID+" to be ready... (queryId="+creationQueryId+")");
             JsonElement res = CodeBlocks.waitForQueryReply(creationQueryId);
-            creationQueryId = -1;
-            //System.out.println("Object "+TYPE+"#"+ID+" is ready. Received: "+res);
-            return res;
+            this._onCreated(res);
+            //System.out.println("Object "+TYPE+"#"+ID+" is ready. Received: "+res);            
         }
-        return null;
+    }
+
+    @JSEvent("ready")
+    private void onReadyEvent(JsonElement json) {
+        if (!didReceiveReady()){
+            this._onCreated(json);
+        }
     }
 
     protected void sendCommand(String cmd, JsonSerializer json) {

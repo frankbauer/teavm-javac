@@ -11,9 +11,9 @@ import java.util.List;
 public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
     private static final String REMOTE_OBJECT = "de.fau.tf.lgdv.runtime.RemoteObject";
     private static final String ASYNC = "org.teavm.interop.Async";
-    private static final String JS_COMMAND = "de.fau.tf.lgdv.JSCommand";
-    private static final String JS_EVENT = "de.fau.tf.lgdv.JSEvent";
-    private static final String JS_QUERY = "de.fau.tf.lgdv.JSQuery";
+    private static final String JS_COMMAND = "de.fau.tf.lgdv.runtime.annotations.JSCommand";
+    private static final String JS_EVENT = "de.fau.tf.lgdv.runtime.annotations.JSEvent";
+    private static final String JS_QUERY = "de.fau.tf.lgdv.runtime.annotations.JSQuery";
     private static final String JSON_OBJECT = "de.fau.tf.lgdv.json.JsonObject";
     private static final String JSON_ARRAY = "de.fau.tf.lgdv.json.JsonArray";
     private static final String JSON_ELEMENT = "de.fau.tf.lgdv.json.JsonElement";

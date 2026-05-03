@@ -1,4 +1,4 @@
-package de.fau.tf.lgdv;
+package de.fau.tf.lgdv.runtime.annotations;
 import java.lang.annotation.*;
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)

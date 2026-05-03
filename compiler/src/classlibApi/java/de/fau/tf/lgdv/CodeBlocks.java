@@ -82,6 +82,7 @@ public class CodeBlocks {
 
     private static void waitForQueryReply(final int queryId, final AsyncCallback<JsonElement> callback) {
         // System.out.println("Registration: waitForQueryReply for queryId " + queryId + " with callback " + callback);
+        startReceivingEvents(null);
         pendingSyncCalls.put(queryId, callback);
     }
 
@@ -90,6 +91,7 @@ public class CodeBlocks {
 
     private static void waitForEvent(final String key, final AsyncCallback<JsonElement> callback) {
         // System.out.println("Registration: waitForEvent for key " + key + " with callback " + callback);
+        startReceivingEvents(null);
         pendingEventCalls.put(key, callback);
     }
 
@@ -126,7 +128,7 @@ public class CodeBlocks {
     private static EventListener listener;
     private static List<CodeBlocksEventFunction> eventFunctions = new ArrayList<>();
     public static void startReceivingEvents(CodeBlocksEventFunction handler){
-        if (!eventFunctions.contains(handler)) eventFunctions.add(handler);
+        if (handler != null && !eventFunctions.contains(handler)) eventFunctions.add(handler);
         if (listener != null) return;
         
         listener = (EventListener<MessageEvent>) (MessageEvent event) -> {
