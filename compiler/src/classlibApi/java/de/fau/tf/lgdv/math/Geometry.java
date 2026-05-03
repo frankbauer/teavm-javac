@@ -15,6 +15,7 @@
  */
 package de.fau.tf.lgdv.math;
 
+import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.json.JsonObjectable;
 
@@ -40,7 +41,7 @@ public class Geometry implements JsonObjectable {
     }
 
     @Override
-    public JsonObject toJsonObject() {
-        return new JsonObject().put("origin", origin);
+    public JsonElement toJsonElement() {
+        return new JsonObject().put("origin", origin).toJsonElement();
     }
 }

@@ -15,6 +15,7 @@
  */
 package de.fau.tf.lgdv.math;
 
+import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.json.JsonObjectable;
 
@@ -34,7 +35,7 @@ public class Size implements JsonObjectable {
     }
 
     @Override
-    public JsonObject toJsonObject() {
-        return new JsonObject().put("width", this.width).put("height", this.height);
+    public JsonElement toJsonElement() {
+        return new JsonObject().put("width", this.width).put("height", this.height).toJsonElement();
     }
 }

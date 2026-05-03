@@ -15,6 +15,7 @@
  */
 package de.fau.tf.lgdv.math;
 
+import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.json.JsonObjectable;
 
@@ -104,7 +105,9 @@ public class Plane extends Geometry implements JsonObjectable {
     }
 
     @Override
-    public JsonObject toJsonObject() {
-        return super.toJsonObject().put("xAxis", xAxis).put("yAxis", yAxis).put("normal", normal);
+    public JsonElement toJsonElement() {
+        JsonElement base = super.toJsonElement();
+        base.getObject().put("xAxis", xAxis).put("yAxis", yAxis).put("normal", normal);
+        return base;
     }
 }

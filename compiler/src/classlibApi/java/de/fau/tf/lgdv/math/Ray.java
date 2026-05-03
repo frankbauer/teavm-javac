@@ -15,6 +15,7 @@
  */
 package de.fau.tf.lgdv.math;
 
+import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.json.JsonObjectable;
 
@@ -449,7 +450,9 @@ public class Ray extends Geometry  implements JsonObjectable{
     }
 
     @Override
-    public JsonObject toJsonObject() {
-        return super.toJsonObject().put("dir", dir);
+    public JsonElement toJsonElement() {
+        JsonElement base = super.toJsonElement();
+        base.getObject().put("dir", dir);
+        return base;
     }
 }

@@ -15,6 +15,7 @@
  */
 package de.fau.tf.lgdv.math;
 
+import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.json.JsonObjectable;
 
@@ -75,7 +76,7 @@ public class Line2D implements JsonObjectable{
     }
 
     @Override
-    public JsonObject toJsonObject() {
-        return new JsonObject().put("origin", origin).put("dir", dir);
+    public JsonElement toJsonElement() {
+        return new JsonObject().put("origin", origin).put("dir", dir).toJsonElement();
     }
 }

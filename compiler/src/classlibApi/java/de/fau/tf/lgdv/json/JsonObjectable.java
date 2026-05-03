@@ -16,17 +16,17 @@
 package de.fau.tf.lgdv.json;
 
 /**
- * An interface for objects that can be converted to a JsonObject
+ * An interface for objects that can be converted to a JsonElement
  */
 public interface JsonObjectable extends JsonSerializer {
     /**
-     * Converts the object to a JsonObject
-     * @return the JsonObject representation of the object
+     * Converts the object to a JsonElement
+     * @return the JsonElement representation of the object
      */
-    JsonObject toJsonObject();
+    JsonElement toJsonElement();
 
     @Override
     default String toJson() {
-        return toJsonObject().toJson();
+        return toJsonElement().toJson();
     }
 }

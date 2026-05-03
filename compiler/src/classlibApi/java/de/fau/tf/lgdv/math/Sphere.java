@@ -15,6 +15,7 @@
  */
 package de.fau.tf.lgdv.math;
 
+import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.json.JsonObjectable;
 
@@ -50,7 +51,9 @@ public class Sphere extends Geometry implements JsonObjectable {
     }
 
     @Override
-    public JsonObject toJsonObject() {
-        return super.toJsonObject().put("radius", radius);
+    public JsonElement toJsonElement() {
+        JsonElement base = super.toJsonElement();
+        base.getObject().put("radius", radius);
+        return base;
     }
 }

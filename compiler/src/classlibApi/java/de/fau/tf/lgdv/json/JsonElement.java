@@ -15,7 +15,7 @@
  */
 package de.fau.tf.lgdv.json;
 
-public class JsonElement implements JsonSerializer {
+public class JsonElement implements JsonObjectable {
     private final Object value;
     JsonElement(Object value) {
         this.value = value;
@@ -136,6 +136,30 @@ public class JsonElement implements JsonSerializer {
         return value==null;
     }
 
+    public static JsonElement from(String value){
+        return new JsonElement(value);
+    }
+
+    public static JsonElement from(int value){
+        return new JsonElement(value);
+    }
+
+    public static JsonElement from(double value){
+        return new JsonElement(value);
+    }
+
+    public static JsonElement from(boolean value){
+        return new JsonElement(value);
+    }
+
+    public static JsonElement from(java.util.Date value){
+        return new JsonElement(value);
+    }
+
+    public static JsonElement from(JsonObjectable value){
+        return value.toJsonElement();
+    }
+
     @Override
     public String toString() {
         return new StringBuilder().append("Element[").append(getTypeString()).append("]: ").append(toJson()).toString();
@@ -178,6 +202,12 @@ public class JsonElement implements JsonSerializer {
         return "none";
     }
 
+    @Override
+    public JsonElement toJsonElement() {
+        return this;
+    }
+
+    @Override
     public String toJson(){
         if (value instanceof JsonArray){
             return ((JsonArray)value).toJson();
