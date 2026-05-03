@@ -48,6 +48,11 @@ public class Vec2D implements JsonObjectable{
      */
     public final double y;
 
+    public Vec2D(JsonObject o) {
+        this.x = o.getDouble("x", 0.0);
+        this.y = o.getDouble("y", 0.0);
+    }
+
     /**
      * Creates a new Vector at the Origin
      */

@@ -81,7 +81,7 @@ public class CodeBlocks {
     public static native JsonElement waitForQueryReply(int queryId);
 
     private static void waitForQueryReply(final int queryId, final AsyncCallback<JsonElement> callback) {
-        System.out.println("Registration: waitForQueryReply for queryId " + queryId + " with callback " + callback);
+        // System.out.println("Registration: waitForQueryReply for queryId " + queryId + " with callback " + callback);
         pendingSyncCalls.put(queryId, callback);
     }
 
@@ -89,7 +89,7 @@ public class CodeBlocks {
     public static native JsonElement waitForEvent(String key);
 
     private static void waitForEvent(final String key, final AsyncCallback<JsonElement> callback) {
-        System.out.println("Registration: waitForEvent for key " + key + " with callback " + callback);
+        // System.out.println("Registration: waitForEvent for key " + key + " with callback " + callback);
         pendingEventCalls.put(key, callback);
     }
 
@@ -118,6 +118,11 @@ public class CodeBlocks {
     @JSBody(params = "obj", script = "return (typeof obj.json === 'string') ? obj.json : \"{}\";")
     private static native String getJSONString(JSObject obj);
 
+    public static JsonElement parseMessageJSON(CodeBlocksBaseMessage msg) {
+        // System.out.println("Parsing JSON from message: " + msg + ", jsonStr=" + getJSONString(msg));
+        return JsonParser.parse(getJSONString(msg));
+    }
+
     private static EventListener listener;
     private static List<CodeBlocksEventFunction> eventFunctions = new ArrayList<>();
     public static void startReceivingEvents(CodeBlocksEventFunction handler){
@@ -133,7 +138,7 @@ public class CodeBlocks {
                     request.setCommand(cmd);
 
                     int qId = getQueryId(request);
-                    System.out.println("Processing message: cmd=" + cmd + ", queryId=" + qId);
+                    //System.out.println("Processing message: cmd=" + cmd + ", queryId=" + qId);
 
                     boolean completed = false;
                     // Match by queryId (for direct sendQuery and blocking sendNew)
@@ -142,7 +147,7 @@ public class CodeBlocks {
                         if (syncCallback != null) {
                             String jsonStr = getJSONString(request);
                             JsonElement element = JsonParser.parse(jsonStr);
-                            System.out.println("Completing syncCallback for queryId "+qId+": "+jsonStr+", " + element +"," +syncCallback);
+                            // System.out.println("Completing syncCallback for queryId "+qId+": "+jsonStr+", " + element +"," +syncCallback);
                             syncCallback.complete(element);
                             completed = true;                        
                         }
@@ -157,7 +162,7 @@ public class CodeBlocks {
                         if (eventCallback != null) {
                             String jsonStr = getJSONString(request);
                             JsonElement element = JsonParser.parse(jsonStr);
-                            System.out.println("Completing eventCallback for key "+eventKey+": "+jsonStr +", " + element);
+                            // System.out.println("Completing eventCallback for key "+eventKey+": "+jsonStr +", " + element);
                             eventCallback.complete(element);
                         }
 
@@ -177,7 +182,7 @@ public class CodeBlocks {
                         if (eventCallback != null) {
                             String jsonStr = getJSONString(request);
                             JsonElement element = JsonParser.parse(jsonStr);
-                            System.out.println("Completing eventCallback for key "+eventKey+": "+jsonStr +", " + element);
+                            // System.out.println("Completing eventCallback for key "+eventKey+": "+jsonStr +", " + element);
                             eventCallback.complete(element);
                         }
 
@@ -186,7 +191,7 @@ public class CodeBlocks {
                         }
                     }
                 } else {
-                    System.out.println("Skipping message (no 'd-' prefix): cmd=" + cmd);
+                    // System.out.println("Skipping message (no 'd-' prefix): cmd=" + cmd);
                 }
             }
         };

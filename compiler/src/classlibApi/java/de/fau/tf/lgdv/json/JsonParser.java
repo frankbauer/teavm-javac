@@ -61,10 +61,15 @@ public class JsonParser {
             if (index >= value.length()) return "";
             char c = nextNonWhitespaceChar();
 
-            while (!isWhitespace(c)){
+            while (c != ',' && c != '}' && c != ']' && c != ':' && !isWhitespace(c)){
                 builder.append(c);
                 if (index >= value.length()) break;
                 c = value.charAt(index++);
+            }
+
+            // Put back JSON structural characters so the caller can process them
+            if (c == ',' || c == '}' || c == ']' || c == ':') {
+                goBack();
             }
 
             return builder.toString();

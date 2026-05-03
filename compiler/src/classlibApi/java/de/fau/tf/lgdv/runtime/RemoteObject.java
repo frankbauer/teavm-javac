@@ -47,10 +47,10 @@ public abstract class RemoteObject {
 
     protected JsonElement waitForCreated() {
         if (creationQueryId > -1) {
-            System.out.println("Waiting for object "+TYPE+"#"+ID+" to be ready... (queryId="+creationQueryId+")");
+            //System.out.println("Waiting for object "+TYPE+"#"+ID+" to be ready... (queryId="+creationQueryId+")");
             JsonElement res = CodeBlocks.waitForQueryReply(creationQueryId);
             creationQueryId = -1;
-            System.out.println("Object "+TYPE+"#"+ID+" is ready. Received: "+res);
+            //System.out.println("Object "+TYPE+"#"+ID+" is ready. Received: "+res);
             return res;
         }
         return null;

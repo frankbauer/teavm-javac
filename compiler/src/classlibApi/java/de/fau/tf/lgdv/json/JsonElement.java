@@ -41,7 +41,7 @@ public class JsonElement implements JsonObjectable {
 
     public double getDouble(double defaultValue){
         if (value==null || !isDouble()) return defaultValue;
-        return (Integer) value;
+        return (Double) value;
     }
 
     public String getString(){
@@ -76,7 +76,7 @@ public class JsonElement implements JsonObjectable {
     }
 
     public JsonArray getArray(JsonArray defaultValue){
-        if (value==null || !isObject()) return defaultValue;
+        if (value==null || !isArray()) return defaultValue;
         return (JsonArray) value;
     }
 

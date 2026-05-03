@@ -83,6 +83,10 @@ public class JsonObject implements JsonObjectable {
     public double getDouble(String key){
         return map.get(key).getDouble();
     }
+    public double getDouble(String key, double defaultValue){
+        JsonElement el = map.get(key);
+        return el != null ? el.getDouble(defaultValue) : defaultValue;
+    }
     public double getDouble(String key, Double defaultValue){
         JsonElement el = map.get(key);
         return el != null ? el.getDouble(defaultValue) : defaultValue;
@@ -91,7 +95,10 @@ public class JsonObject implements JsonObjectable {
     public boolean getBoolean(String key){
         return map.get(key).getBoolean();
     }
-
+    public boolean getBoolean(String key, boolean defaultValue){
+        JsonElement el = map.get(key);
+        return el != null ? el.getBoolean(defaultValue) : defaultValue;
+    }
     public boolean getBoolean(String key, Boolean defaultValue){
         JsonElement el = map.get(key);
         return el != null ? el.getBoolean(defaultValue) : defaultValue;
