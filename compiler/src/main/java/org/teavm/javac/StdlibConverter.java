@@ -216,7 +216,7 @@ public class StdlibConverter extends ClassVisitor {
         if (isTeaVMAnnotation(desc)) {
             return null;
         }
-        return super.visitAnnotation(desc, visible);
+        return new AnnotationVisitorImpl(super.visitAnnotation(renameDesc(desc), visible));
     }
 
     class FieldVisitorImpl extends FieldVisitor {
@@ -229,8 +229,7 @@ public class StdlibConverter extends ClassVisitor {
             if (!visible || isTeaVMAnnotation(desc)) {
                 return null;
             }
-            desc = renameDesc(desc);
-            return new AnnotationVisitorImpl(super.visitAnnotation(desc, visible));
+            return new AnnotationVisitorImpl(super.visitAnnotation(renameDesc(desc), visible));
         }
     }
 
@@ -244,8 +243,7 @@ public class StdlibConverter extends ClassVisitor {
             if (!visible || isTeaVMAnnotation(desc)) {
                 return null;
             }
-            desc = renameDesc(desc);
-            return new AnnotationVisitorImpl(super.visitAnnotation(desc, visible));
+            return new AnnotationVisitorImpl(super.visitAnnotation(renameDesc(desc), visible));
         }
     }
 
@@ -259,8 +257,7 @@ public class StdlibConverter extends ClassVisitor {
             if (!visible || isTeaVMAnnotation(desc)) {
                 return null;
             }
-            desc = renameDesc(desc);
-            return new AnnotationVisitorImpl(super.visitAnnotation(name, desc));
+            return new AnnotationVisitorImpl(super.visitAnnotation(name, renameDesc(desc)));
         }
 
         @Override
@@ -606,8 +603,7 @@ public class StdlibConverter extends ClassVisitor {
         reader.accept(converter, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES
                 | ClassReader.SKIP_DEBUG);
         if (converter.visible) {
-            var outputName = converter.className + ".class";
-            output.append(outputName, writer.toByteArray());
+            output.append(converter.className + ".class", writer.toByteArray());
         }
         if (converter.className != null) {
             var index = converter.className.lastIndexOf('/');

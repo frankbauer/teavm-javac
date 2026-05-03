@@ -10,6 +10,7 @@ import java.util.List;
 
 public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
     private static final String REMOTE_OBJECT = "de.fau.tf.lgdv.runtime.RemoteObject";
+    private static final String ASYNC = "org.teavm.interop.Async";
     private static final String JS_COMMAND = "de.fau.tf.lgdv.JSCommand";
     private static final String JS_EVENT = "de.fau.tf.lgdv.JSEvent";
     private static final String JS_QUERY = "de.fau.tf.lgdv.JSQuery";
@@ -18,9 +19,16 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
     private static final String JSON_OBJECTABLE = "de.fau.tf.lgdv.json.JsonObjectable";
     private static final String JSON_SERIALIZER = "de.fau.tf.lgdv.json.JsonSerializer";
     private static final String CODE_BLOCKS = "de.fau.tf.lgdv.CodeBlocks";
+    private static final String CODE_BLOCKS_EVENT_FUNCTION = "de.fau.tf.lgdv.CodeBlocksEventFunction";
+    private static final String CODE_BLOCKS_BASE_MESSAGE = "de.fau.tf.lgdv.CodeBlocksBaseMessage";
     private static final String MARKER = "__rpc_done";
-    
+
     private static int wrapperCounter = 0;
+    private final MutableClassHolderSource syntheticClasses;
+
+    public JSRPCPlugin(MutableClassHolderSource syntheticClasses) {
+        this.syntheticClasses = syntheticClasses;
+    }
 
     @Override
     public void install(TeaVMHost host) {
@@ -32,7 +40,8 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         if (cls.getAnnotations().get(MARKER) != null) return;
         
-        List<MethodHolder> eventMethods = new ArrayList<>();
+        List<MethodHolder> instanceEventMethods = new ArrayList<>();
+        List<MethodHolder> staticEventMethods = new ArrayList<>();
         boolean isRemoteObject = context.getHierarchy().isSuperType(REMOTE_OBJECT, cls.getName(), false);
         boolean changed = false;
 
@@ -46,17 +55,30 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
             } else if (annotations.get(JS_QUERY) != null) {
                 transformQuery(cls, method, isRemoteObject, context);
                 annotations.remove(JS_QUERY);
+                annotations.remove(ASYNC);
                 method.getModifiers().remove(ElementModifier.NATIVE);
                 changed = true;
             } else if (annotations.get(JS_EVENT) != null) {
-                if (isRemoteObject) eventMethods.add(method);
+                if (method.getModifiers().contains(ElementModifier.STATIC)) {
+                    staticEventMethods.add(method);
+                } else if (isRemoteObject) {
+                    instanceEventMethods.add(method);
+                }
                 changed = true;
             }
         }
 
-        if (!eventMethods.isEmpty() && isRemoteObject) {
-            implementHandleEvent(cls, eventMethods, context);
-            for (MethodHolder method : eventMethods) {
+        if (!instanceEventMethods.isEmpty() && isRemoteObject) {
+            implementHandleEvent(cls, instanceEventMethods, context);
+            for (MethodHolder method : instanceEventMethods) {
+                method.getAnnotations().remove(JS_EVENT);
+            }
+            changed = true;
+        }
+
+        if (!staticEventMethods.isEmpty()) {
+            implementStaticEventDispatch(cls, staticEventMethods, context);
+            for (MethodHolder method : staticEventMethods) {
                 method.getAnnotations().remove(JS_EVENT);
             }
             changed = true;
@@ -166,8 +188,8 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
             MethodReference sendRef = new MethodReference(REMOTE_OBJECT, "sendCommand", ValueType.object("java.lang.String"), ValueType.object(JSON_SERIALIZER), ValueType.VOID);
             pe.var(0, ValueType.object(cls.getName())).invokeVirtual(sendRef, pe.constant(commandName), payload);
         } else {
-            MethodReference postRef = new MethodReference(CODE_BLOCKS, "postMessage", ValueType.object("java.lang.String"), ValueType.INTEGER, ValueType.object(JSON_SERIALIZER), ValueType.VOID);
-            pe.invoke(postRef, pe.constant(commandName), pe.constant(-1), payload);
+            MethodReference postRef = new MethodReference(CODE_BLOCKS, "postMessage", ValueType.object("java.lang.String"), ValueType.object(JSON_SERIALIZER), ValueType.VOID);
+            pe.invoke(postRef, pe.constant(commandName), payload);
         }
     }
 
@@ -193,9 +215,20 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
     }
 
     private void implementHandleEvent(ClassHolder cls, List<MethodHolder> eventMethods, ClassHolderTransformerContext context) {
-        MethodDescriptor desc = new MethodDescriptor("handleEvent", ValueType.object("java.lang.String"), ValueType.object("java.lang.Object"), ValueType.VOID);
+        MethodDescriptor desc = new MethodDescriptor("handleEvent", ValueType.object("java.lang.String"), ValueType.object(JSON_ELEMENT), ValueType.VOID);
         MethodHolder handleEvent = cls.getMethod(desc);
-        if (handleEvent == null) {
+
+        // If there is an existing body, preserve it so we can call it after dispatching.
+        String preservedName = null;
+        if (handleEvent != null && handleEvent.getProgram() != null) {
+            preservedName = "__orig_handleEvent_" + (wrapperCounter++);
+            MethodHolder preserved = new MethodHolder(new MethodDescriptor(preservedName,
+                    ValueType.object("java.lang.String"), ValueType.object(JSON_ELEMENT), ValueType.VOID));
+            preserved.setProgram(handleEvent.getProgram());
+            preserved.setLevel(AccessLevel.PRIVATE);
+            cls.addMethod(preserved);
+            // handleEvent.getProgram() is replaced below by ProgramEmitter.create
+        } else if (handleEvent == null) {
             handleEvent = new MethodHolder(desc);
             handleEvent.setLevel(AccessLevel.PUBLIC);
             cls.addMethod(handleEvent);
@@ -203,8 +236,7 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
 
         ProgramEmitter pe = ProgramEmitter.create(handleEvent, context.getHierarchy());
         ValueEmitter cmdVar = pe.var(1, ValueType.object("java.lang.String"));
-        ValueEmitter jsonVar = pe.var(2, ValueType.object("java.lang.Object"));
-        
+        ValueEmitter jsonVar = pe.var(2, ValueType.object(JSON_ELEMENT));
         MethodReference equalsRef = new MethodReference("java.lang.String", "equals", ValueType.object("java.lang.Object"), ValueType.BOOLEAN);
 
         for (MethodHolder eventMethod : eventMethods) {
@@ -223,9 +255,107 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
                   pe.exit();
               });
         }
-        
-        pe.var(0, ValueType.object(cls.getName()))
-          .invoke(InvocationType.SPECIAL, new MethodReference(cls.getParent(), desc), cmdVar, jsonVar);
+
+        // Fall through: call preserved body if one existed, otherwise delegate to parent.
+        if (preservedName != null) {
+            MethodReference preservedRef = new MethodReference(cls.getName(), preservedName,
+                    ValueType.object("java.lang.String"), ValueType.object(JSON_ELEMENT), ValueType.VOID);
+            pe.var(0, ValueType.object(cls.getName())).invokeVirtual(preservedRef, cmdVar, jsonVar);
+        } else {
+            pe.var(0, ValueType.object(cls.getName()))
+              .invoke(InvocationType.SPECIAL, new MethodReference(cls.getParent(), desc), cmdVar, jsonVar);
+        }
         pe.exit();
+    }
+
+    private void implementStaticEventDispatch(ClassHolder cls, List<MethodHolder> eventMethods,
+            ClassHolderTransformerContext context) {
+        // Generate a dedicated $$StaticHandler inner class that implements CodeBlocksEventFunction.
+        // This avoids requiring a default constructor on the outer class.
+        String handlerName = cls.getName() + "$$StaticHandler";
+
+        ClassHolder handler = new ClassHolder(handlerName);
+        handler.setParent("java.lang.Object");
+        handler.getInterfaces().add(CODE_BLOCKS_EVENT_FUNCTION);
+        handler.setLevel(AccessLevel.PACKAGE_PRIVATE);
+
+        // No-arg constructor: calls Object.<init>()
+        MethodHolder ctor = new MethodHolder(new MethodDescriptor("<init>", ValueType.VOID));
+        ctor.setLevel(AccessLevel.PUBLIC);
+        ProgramEmitter ctorPe = ProgramEmitter.create(ctor, context.getHierarchy());
+        ctorPe.var(0, ValueType.object(handlerName))
+              .invoke(InvocationType.SPECIAL, new MethodReference("java.lang.Object", "<init>", ValueType.VOID));
+        ctorPe.exit();
+        handler.addMethod(ctor);
+
+        // handleEvent(CodeBlocksBaseMessage): dispatch to static methods in outer class
+        MethodDescriptor handleEventDesc = new MethodDescriptor(
+                "handleEvent", ValueType.object(CODE_BLOCKS_BASE_MESSAGE), ValueType.VOID);
+        MethodHolder handleEvent = new MethodHolder(handleEventDesc);
+        handleEvent.setLevel(AccessLevel.PUBLIC);
+
+        ProgramEmitter pe = ProgramEmitter.create(handleEvent, context.getHierarchy());
+        ValueEmitter msgVar = pe.var(1, ValueType.object(CODE_BLOCKS_BASE_MESSAGE));
+        ValueEmitter cmdVar = msgVar.invokeVirtual(
+                new MethodReference(CODE_BLOCKS_BASE_MESSAGE, "getCommand", ValueType.object("java.lang.String")));
+        MethodReference equalsRef = new MethodReference(
+                "java.lang.String", "equals", ValueType.object("java.lang.Object"), ValueType.BOOLEAN);
+
+        for (MethodHolder eventMethod : eventMethods) {
+            AnnotationReader ann = eventMethod.getAnnotations().get(JS_EVENT);
+            String eventName = ann != null && ann.getValue("value") != null
+                    ? ann.getValue("value").getString() : eventMethod.getName();
+            final String finalEventName = eventName;
+            pe.when(() -> cmdVar.invokeVirtual(equalsRef, pe.constant(finalEventName)).isTrue())
+              .thenDo(() -> {
+                  if (eventMethod.parameterCount() > 0) {
+                      ValueEmitter arg = msgVar.cast(eventMethod.parameterType(0));
+                      pe.invoke(eventMethod.getReference(), arg);
+                  } else {
+                      pe.invoke(eventMethod.getReference());
+                  }
+                  pe.exit();
+              });
+        }
+        pe.exit();
+        handler.addMethod(handleEvent);
+
+        syntheticClasses.add(handler);
+
+        injectStaticEventRegistration(cls, handlerName, context);
+    }
+
+    private void injectStaticEventRegistration(ClassHolder cls, String handlerName,
+            ClassHolderTransformerContext context) {
+        MethodDescriptor clinitDesc = new MethodDescriptor("<clinit>", ValueType.VOID);
+        MethodHolder clinit = cls.getMethod(clinitDesc);
+
+        MethodReference startRef = new MethodReference(
+                CODE_BLOCKS, "startReceivingEvents",
+                ValueType.object(CODE_BLOCKS_EVENT_FUNCTION), ValueType.VOID);
+
+        if (clinit != null && clinit.getProgram() != null) {
+            String origName = "__orig_clinit_" + (wrapperCounter++);
+            MethodHolder origClinit = new MethodHolder(new MethodDescriptor(origName, ValueType.VOID));
+            origClinit.setProgram(clinit.getProgram());
+            origClinit.setLevel(AccessLevel.PRIVATE);
+            origClinit.getModifiers().add(ElementModifier.STATIC);
+            cls.addMethod(origClinit);
+
+            ProgramEmitter pe = ProgramEmitter.create(clinit, context.getHierarchy());
+            pe.invoke(startRef, pe.construct(handlerName));
+            pe.invoke(new MethodReference(cls.getName(), origName, ValueType.VOID));
+            pe.exit();
+        } else {
+            if (clinit == null) {
+                clinit = new MethodHolder(clinitDesc);
+                clinit.getModifiers().add(ElementModifier.STATIC);
+                clinit.setLevel(AccessLevel.PUBLIC);
+                cls.addMethod(clinit);
+            }
+            ProgramEmitter pe = ProgramEmitter.create(clinit, context.getHierarchy());
+            pe.invoke(startRef, pe.construct(handlerName));
+            pe.exit();
+        }
     }
 }

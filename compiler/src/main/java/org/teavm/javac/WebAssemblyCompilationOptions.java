@@ -26,4 +26,7 @@ public interface WebAssemblyCompilationOptions extends JSObject {
 
     @JSProperty
     JSString getMainClass();
+
+    @JSProperty
+    JSString getSessionId();
 }

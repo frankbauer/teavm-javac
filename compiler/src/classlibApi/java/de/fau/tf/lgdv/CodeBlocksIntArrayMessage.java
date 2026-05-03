@@ -17,7 +17,7 @@ package de.fau.tf.lgdv;
 
 import org.teavm.jso.JSProperty;
 
-public interface CodeBlocksIntArrayMessage extends CodeBlocksBaseMessage{
+public interface CodeBlocksIntArrayMessage extends CodeBlocksBaseMessage {
     @JSProperty
     int[] getValue();
 

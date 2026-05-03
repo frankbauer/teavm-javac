@@ -17,7 +17,7 @@ package de.fau.tf.lgdv;
 
 import org.teavm.jso.JSProperty;
 
-public interface CodeBlocksStringMessage extends CodeBlocksBaseMessage{
+public interface CodeBlocksStringMessage extends CodeBlocksBaseMessage {
     @JSProperty("value")
     String _getValue();
 

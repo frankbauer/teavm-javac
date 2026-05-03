@@ -76,14 +76,16 @@ public class JsonObject implements JsonObjectable {
         return map.get(key).getInteger();
     }
     public int getInt(String key, int defaultValue){
-        return map.get(key).getInteger(defaultValue);
+        JsonElement el = map.get(key);
+        return el != null ? el.getInteger(defaultValue) : defaultValue;
     }
 
     public double getDouble(String key){
         return map.get(key).getDouble();
     }
     public double getDouble(String key, Double defaultValue){
-        return map.get(key).getDouble(defaultValue);
+        JsonElement el = map.get(key);
+        return el != null ? el.getDouble(defaultValue) : defaultValue;
     }
 
     public boolean getBoolean(String key){
@@ -91,7 +93,8 @@ public class JsonObject implements JsonObjectable {
     }
 
     public boolean getBoolean(String key, Boolean defaultValue){
-        return map.get(key).getBoolean(defaultValue);
+        JsonElement el = map.get(key);
+        return el != null ? el.getBoolean(defaultValue) : defaultValue;
     }
 
     public String getString(String key){
@@ -99,14 +102,16 @@ public class JsonObject implements JsonObjectable {
     }
 
     public String getString(String key, String defaultValue){
-        return map.get(key).getString(defaultValue);
+        JsonElement el = map.get(key);
+        return el != null ? el.getString(defaultValue) : defaultValue;
     }
 
     public java.util.Date getDate(String key){
         return map.get(key).getDate();
     }
     public java.util.Date getDate(String key, java.util.Date defaultValue){
-        return map.get(key).getDate(defaultValue);
+        JsonElement el = map.get(key);
+        return el != null ? el.getDate(defaultValue) : defaultValue;
     }
 
     public JsonElement get(String key){
@@ -114,7 +119,8 @@ public class JsonObject implements JsonObjectable {
     }
 
     public boolean isNull(String key){
-        return map.get(key).isNull();
+        JsonElement el = map.get(key);
+        return el == null || el.isNull();
     }
 
     @Override

@@ -17,44 +17,72 @@ package de.fau.tf.lgdv.runtime;
 
 import de.fau.tf.lgdv.CodeBlocks;
 import de.fau.tf.lgdv.CodeBlocksBaseMessage;
-import de.fau.tf.lgdv.NewRemoteObjectMessage;
-import de.fau.tf.lgdv.ObjectReplyMessage;
 import de.fau.tf.lgdv.json.*;
 
 public abstract class RemoteObject { 
     private static int NEXT_OBJECT_ID = 1;
     public final String TYPE;
     public final int ID;
+    protected int creationQueryId ;
 
     protected RemoteObject(String typeString) {
+        this.creationQueryId = CodeBlocks.generateQueryId();
         this.TYPE = typeString;
         this.ID = NEXT_OBJECT_ID++;                
     }
 
     protected void sendNew() {
+        if (creationQueryId<0) {
+            throw new IllegalStateException("Object already created");
+        }
+
         NewRemoteObjectMessage message = CodeBlocks.createJSObject();
         message.setCommand("n");
+        message.setObjId(ID);
+        message.setQueryId(creationQueryId);
         message.setJSON(this.toJsonObject());
         
         CodeBlocks.postMessage(message, this);        
     }
 
-    protected void sendCommand(String cmd, JsonSerializer json){
+    protected JsonElement waitForCreated() {
+        if (creationQueryId > -1) {
+            System.out.println("Waiting for object "+TYPE+"#"+ID+" to be ready... (queryId="+creationQueryId+")");
+            JsonElement res = CodeBlocks.waitForQueryReply(creationQueryId);
+            creationQueryId = -1;
+            System.out.println("Object "+TYPE+"#"+ID+" is ready. Received: "+res);
+            return res;
+        }
+        return null;
+    }
+
+    protected void sendCommand(String cmd, JsonSerializer json) {
         ObjectReplyMessage message = CodeBlocks.createJSObject();
         message.setCommand("o");
         message.setCmd(cmd);
         message.setObjId(ID);
         message.setType(TYPE);
         message.setJSON(json);
-        
-        CodeBlocks.postMessage(message);        
+        CodeBlocks.postMessage(message);
     }
 
-    protected abstract void addAttributes(JsonObject json);  
+    protected JsonElement sendQuery(String cmd, JsonSerializer json) {
+        final int queryId = CodeBlocks.generateQueryId();
+        ObjectReplyMessage message = CodeBlocks.createJSObject();
+        message.setCommand("o");
+        message.setCmd(cmd);
+        message.setObjId(ID);
+        message.setQueryId(queryId);
+        message.setType(TYPE);
+        message.setJSON(json);
+        CodeBlocks.postMessage(message);
+        return CodeBlocks.waitForQueryReply(queryId);
+    }
 
-    public void handleEvent(String cmd, Object json){
-        // Default implementation - can be overridden by subclasses
-    }  
+    protected abstract void addAttributes(JsonObject json);
+
+    public void handleEvent(String cmd, JsonElement json) {
+    }
 
     public JsonObject toJsonReference(){
         return new JsonObject().put("type", TYPE).put("id", ID);        

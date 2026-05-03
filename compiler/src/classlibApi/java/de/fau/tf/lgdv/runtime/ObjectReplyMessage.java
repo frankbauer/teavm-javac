@@ -1,13 +1,7 @@
-package de.fau.tf.lgdv;
+package de.fau.tf.lgdv.runtime;
 import de.fau.tf.lgdv.json.*;
 import org.teavm.jso.JSProperty;
 public interface ObjectReplyMessage extends NewRemoteObjectMessage {
-        @JSProperty("objid")
-        int getObjId();
-
-        @JSProperty("objid")
-        void setObjId(int value);
-
         @JSProperty("type")
         String _getType();
 
@@ -29,4 +23,4 @@ public interface ObjectReplyMessage extends NewRemoteObjectMessage {
 
         @JSProperty("cmd")
         void setCmd(String value);
-    } 
+    }

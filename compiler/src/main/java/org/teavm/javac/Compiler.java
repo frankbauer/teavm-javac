@@ -274,18 +274,23 @@ public final class Compiler {
         }
         var currentResourceProvider = new CompositeResourceProvider(new MemoryResourceProvider(List.of(outputFiles)),
                 resourceProvider);
+        var syntheticClasses = new MutableClassHolderSource();
         var currentClassSource = new CompositeClassHolderSource(List.of(
+                syntheticClasses,
                 new ClasspathClassHolderSource(currentResourceProvider, refCache), classSource));
         var teavm = new TeaVMBuilder(target)
                 .setClassSource(currentClassSource)
                 .setResourceProvider(currentResourceProvider)
                 .setReferenceCache(refCache)
                 .setObfuscated(false)
-                .setStrict(true)                
+                .setStrict(true)
                 .build();
         teavm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
-        new Patches().install(teavm); 
-        new JSRPCPlugin().install(teavm); 
+        new Patches().install(teavm);
+        if (options.getSessionId() != null && !JSObjects.isUndefined(options.getSessionId())) {
+            new SessionIdPatch(options.getSessionId().stringValue()).install(teavm);
+        }
+        new JSRPCPlugin(syntheticClasses).install(teavm); 
         new JSOPlugin().install(teavm);
         new PlatformPlugin().install(teavm);
         new JCLPlugin().install(teavm);

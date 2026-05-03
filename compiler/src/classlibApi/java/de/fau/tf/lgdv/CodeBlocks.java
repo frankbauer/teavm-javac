@@ -28,15 +28,24 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import de.fau.tf.lgdv.runtime.RemoteObject;
+import de.fau.tf.lgdv.runtime.NewRemoteObjectMessage;
+import de.fau.tf.lgdv.runtime.ObjectReplyMessage;
 
 public class CodeBlocks {
     @JSBody(script = "return {  };")
     public static native <T extends JSObject> T createJSObject();
 
+    /**
+     * This method is patched during link-time to return the actual session ID.
+     */
+    public static String getSessionId() {
+        return "";
+    }
+
     public static void exit(int code){
         CodeBlocksStringMessage msg = createJSObject();
         msg.setCommand("f-EXIT");
-        msg.setId(-1);
+        msg.setSessionId(getSessionId());
         Window.worker().postMessage(msg);
         if (listener != null) {
             stopReceivingEvents();
@@ -51,7 +60,7 @@ public class CodeBlocks {
     public static void postResult(String jsonObject){
         CodeBlocksStringMessage msg = createJSObject();
         msg.setCommand("f-FINAL");
-        msg.setId(-1);
+        msg.setSessionId(getSessionId());
         msg.setValue(jsonObject);
         Window.worker().postMessage(msg);
     }
@@ -59,35 +68,39 @@ public class CodeBlocks {
     @JSBody(params = "obj", script = "return JSON.stringify(obj);")
     public static native String stringify(JSObject obj);
 
-    private static Map eventHandlers = new HashMap();
-    private static Map pendingSyncCalls = new HashMap();
-    private static int nextSyncId = 1000000;
+    private static Map<String, Object> eventHandlers = new HashMap<>();
+    private static Map<Integer, AsyncCallback<JsonElement>> pendingSyncCalls = new HashMap<>();
+    private static Map<String, AsyncCallback<JsonElement>> pendingEventCalls = new HashMap<>();
+    private static int nextQueryId = 1000000;
 
-    @Async
-    public static native String waitForMessage(String key);
-
-    private static void waitForMessage(final String key, final AsyncCallback callback) {
-        pendingSyncCalls.put(key, callback);
+    public static int generateQueryId() {
+        return nextQueryId++;
     }
 
     @Async
+    public static native JsonElement waitForQueryReply(int queryId);
+
+    private static void waitForQueryReply(final int queryId, final AsyncCallback<JsonElement> callback) {
+        System.out.println("Registration: waitForQueryReply for queryId " + queryId + " with callback " + callback);
+        pendingSyncCalls.put(queryId, callback);
+    }
+
+    @Async
+    public static native JsonElement waitForEvent(String key);
+
+    private static void waitForEvent(final String key, final AsyncCallback<JsonElement> callback) {
+        System.out.println("Registration: waitForEvent for key " + key + " with callback " + callback);
+        pendingEventCalls.put(key, callback);
+    }
+
     public static JsonElement sendQuery(String cmd, JsonSerializer json) {
-        int id = nextSyncId++;
-        postMessage(cmd, id, json);
-        String replyJson = waitForMessage(cmd + "Reply:" + id);
-        if (replyJson != null) {
-            JsonElement el = JsonParser.parse(replyJson);
-            if (el.isObject()) {
-                JsonElement inner = (JsonElement) ((JsonObject)el.getObject()).get("json");
-                if (inner != null && inner.isString()) return JsonParser.parse(inner.getString());
-            }
-            return el;
-        }
-        return null;
+        int qId = generateQueryId();
+        postQuery(cmd, qId, json);
+        return waitForQueryReply(qId);
     }
 
     public static void postMessage(NewRemoteObjectMessage message, RemoteObject handler){
-        eventHandlers.put(handler.ID, handler);
+        eventHandlers.put(String.valueOf(handler.ID), handler);
         CodeBlocks.postMessage(message);
     }
 
@@ -95,11 +108,18 @@ public class CodeBlocks {
         if (!message.getCommand().startsWith("w-")){
             message.setCommand("w-"+message.getCommand());
         }
+        message.setSessionId(getSessionId());
         Window.worker().postMessage(message);
     }
 
+    @JSBody(params = "obj", script = "var q = obj.queryId; return (typeof q === 'number') ? q : (typeof q === 'string' ? parseInt(q) : -1);")
+    private static native int getQueryId(JSObject obj);
+
+    @JSBody(params = "obj", script = "return (typeof obj.json === 'string') ? obj.json : \"{}\";")
+    private static native String getJSONString(JSObject obj);
+
     private static EventListener listener;
-    private static List eventFunctions = new ArrayList();
+    private static List<CodeBlocksEventFunction> eventFunctions = new ArrayList<>();
     public static void startReceivingEvents(CodeBlocksEventFunction handler){
         if (!eventFunctions.contains(handler)) eventFunctions.add(handler);
         if (listener != null) return;
@@ -112,36 +132,61 @@ public class CodeBlocks {
                     cmd = cmd.substring(2);
                     request.setCommand(cmd);
 
-                    String syncKey = cmd + ":" + request.getId();
-                    
+                    int qId = getQueryId(request);
+                    System.out.println("Processing message: cmd=" + cmd + ", queryId=" + qId);
+
+                    boolean completed = false;
+                    // Match by queryId (for direct sendQuery and blocking sendNew)
+                    if (qId > -1) {
+                        AsyncCallback<JsonElement> syncCallback = pendingSyncCalls.remove(qId);
+                        if (syncCallback != null) {
+                            String jsonStr = getJSONString(request);
+                            JsonElement element = JsonParser.parse(jsonStr);
+                            System.out.println("Completing syncCallback for queryId "+qId+": "+jsonStr+", " + element +"," +syncCallback);
+                            syncCallback.complete(element);
+                            completed = true;                        
+                        }
+                    }
+
                     if (cmd.equals("o")) {
                         ObjectReplyMessage orm = (ObjectReplyMessage) request;
-                        syncKey = "o:" + orm.getObjId() + ":" + orm.getCmd();
                         
-                        int id = orm.getObjId();
-                        RemoteObject rObj = (RemoteObject) eventHandlers.get(id);
-                        
-                        Object callbackRaw = pendingSyncCalls.remove(syncKey);
-                        if (callbackRaw != null) {
-                            ((AsyncCallback) callbackRaw).complete(stringify(request));
+                        // Match by event key (e.g. "o:1:ready") for named event waits
+                        String eventKey = "o:" + orm.getObjId() + ":" + orm.getCmd();
+                        AsyncCallback<JsonElement> eventCallback = pendingEventCalls.remove(eventKey);
+                        if (eventCallback != null) {
+                            String jsonStr = getJSONString(request);
+                            JsonElement element = JsonParser.parse(jsonStr);
+                            System.out.println("Completing eventCallback for key "+eventKey+": "+jsonStr +", " + element);
+                            eventCallback.complete(element);
                         }
 
+                        int id = orm.getObjId();
+                        RemoteObject rObj = (RemoteObject) eventHandlers.get(String.valueOf(id));
+                        
                         if (rObj != null ) {
                             if (rObj.TYPE.equals(orm.getType())) {
                                 JsonElement json = orm.getJSON();
                                 rObj.handleEvent(orm.getCmd(), json);
                             }
                         }
-                    } else {
-                        Object callbackRaw = pendingSyncCalls.remove(syncKey);
-                        if (callbackRaw != null) {
-                            ((AsyncCallback) callbackRaw).complete(stringify(request));
+                    } else if (!completed) {
+                        // Match by command-based event key
+                        String eventKey = cmd + ":" + qId;
+                        AsyncCallback<JsonElement> eventCallback = pendingEventCalls.remove(eventKey);
+                        if (eventCallback != null) {
+                            String jsonStr = getJSONString(request);
+                            JsonElement element = JsonParser.parse(jsonStr);
+                            System.out.println("Completing eventCallback for key "+eventKey+": "+jsonStr +", " + element);
+                            eventCallback.complete(element);
                         }
 
-                        for (Object f : eventFunctions) {
-                            ((CodeBlocksEventFunction) f).handleEvent(request);
+                        for (CodeBlocksEventFunction f : eventFunctions) {
+                            f.handleEvent(request);
                         }
                     }
+                } else {
+                    System.out.println("Skipping message (no 'd-' prefix): cmd=" + cmd);
                 }
             }
         };
@@ -153,92 +198,98 @@ public class CodeBlocks {
             Window.worker().removeEventListener("message", listener);
             listener = null;
         }
+        eventFunctions.clear();
     }
 
-    public static void postMessage(String cmd, int id){
-        postMessage(createMessage(cmd, id));
+    public static void postMessage(String cmd){
+        postMessage(createMessage(cmd));
     }
 
-    public static CodeBlocksBaseMessage createMessage(String cmd, int id){
+    public static CodeBlocksBaseMessage createMessage(String cmd){
         CodeBlocksBaseMessage msg = createJSObject();
         msg.setCommand("w-"+cmd);
-        msg.setId(id);
         return msg;
     }
 
-    public static void postMessage(String cmd, int id, int value){
-        postMessage(createMessage(cmd, id, value));
+    public static void postMessage(String cmd, int value){
+        postMessage(createMessage(cmd, value));
     }
 
-    public static CodeBlocksIntMessage createMessage(String cmd, int id, int value){
+    public static CodeBlocksIntMessage createMessage(String cmd, int value){
         CodeBlocksIntMessage msg = createJSObject();
         msg.setCommand("w-"+cmd);
-        msg.setId(id);
         msg.setValue(value);
         return msg;
     }
 
-    public static void postMessage(String cmd, int id, int[] value){
-        postMessage(createMessage(cmd, id, value));
+    public static void postMessage(String cmd, int[] value){
+        postMessage(createMessage(cmd, value));
     }
 
-    public static CodeBlocksIntArrayMessage createMessage(String cmd, int id, int[] value){
+    public static CodeBlocksIntArrayMessage createMessage(String cmd, int[] value){
         CodeBlocksIntArrayMessage msg = createJSObject();
         msg.setCommand("w-"+cmd);
-        msg.setId(id);
         msg.setValue(value);
         return msg;
     }
 
-    public static void postMessage(String cmd, int id, double value){
-        postMessage(createMessage(cmd, id, value));
+    public static void postMessage(String cmd, double value){
+        postMessage(createMessage(cmd, value));
     }
 
-    public static CodeBlocksDoubleMessage createMessage(String cmd, int id, double value){
+    public static CodeBlocksDoubleMessage createMessage(String cmd, double value){
         CodeBlocksDoubleMessage msg = createJSObject();
         msg.setCommand("w-"+cmd);
-        msg.setId(id);
         msg.setValue(value);
         return msg;
     }
 
-    public static void postMessage(String cmd, int id, double[] value){
-        postMessage(createMessage(cmd, id, value));
+    public static void postMessage(String cmd, double[] value){
+        postMessage(createMessage(cmd, value));
     }
 
-    public static CodeBlocksDoubleArrayMessage createMessage(String cmd, int id, double[] value){
+    public static CodeBlocksDoubleArrayMessage createMessage(String cmd, double[] value){
         CodeBlocksDoubleArrayMessage msg = createJSObject();
         msg.setCommand("w-"+cmd);
-        msg.setId(id);
         msg.setValue(value);
         return msg;
     }
 
-    public static void postMessage(String cmd, int id, String value){
-        postMessage(createMessage(cmd, id, value));
+    public static void postMessage(String cmd, String value){
+        postMessage(createMessage(cmd, value));
     }
 
-    public static CodeBlocksStringMessage createMessage(String cmd, int id, String value){
+    public static CodeBlocksStringMessage createMessage(String cmd, String value){
         CodeBlocksStringMessage msg = createJSObject();
         msg.setCommand("w-"+cmd);
-        msg.setId(id);
         msg.setValue(value);
         return msg;
     }
 
-    public static void postMessage(String cmd, int id, String[] value){
-        postMessage(createMessage(cmd, id, value));
+    public static void postMessage(String cmd, String[] value){
+        postMessage(createMessage(cmd, value));
     }
 
-    public static CodeBlocksStringArrayMessage createMessage(String cmd, int id, String[] value){
+    public static CodeBlocksStringArrayMessage createMessage(String cmd, String[] value){
         CodeBlocksStringArrayMessage msg = createJSObject();
         msg.setCommand("w-"+cmd);
-        msg.setId(id);
         msg.setValue(value);
         return msg;
     }
 
-    public static void postMessage(String cmd, int id, JsonSerializer value){
-        postMessage(createMessage(cmd, id, value.toJson()));
+    public static void postMessage(String cmd, JsonSerializer value){
+        postMessage(createMessage(cmd, value.toJson()));
+    }
+
+    // Query-specific overloads for sendQuery support
+    @JSBody(params = {"msg", "queryId"}, script = "msg.queryId = queryId;")
+    private static native void setQueryId(JSObject msg, int queryId);
+
+    public static void postQuery(String cmd, int queryId, JsonSerializer value){
+        CodeBlocksQueryMessage msg = createJSObject();
+        msg.setCommand("w-"+cmd);
+        setQueryId(msg, queryId);
+        msg.setJSON(value);
+        postMessage(msg);
     }
 }

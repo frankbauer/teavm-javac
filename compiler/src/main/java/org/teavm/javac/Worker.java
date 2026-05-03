@@ -316,6 +316,11 @@ public final class Worker {
             public JSString getMainClass() {
                 return JSString.valueOf(mainClass);
             }
+
+            @Override
+            public JSString getSessionId() {
+                return JSString.valueOf(requestId);
+            }
         };
         var reg = compiler.onDiagnostic(diagnostic -> handleTeaVMDiagnostic((TeaVMDiagnostic) diagnostic, requestId));
         var result = compiler.generateWebAssembly(options);

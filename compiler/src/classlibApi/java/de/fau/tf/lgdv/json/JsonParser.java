@@ -45,9 +45,11 @@ public class JsonParser {
         }
 
         public char nextNonWhitespaceChar() {
+            if (index >= value.length()) throw new IllegalArgumentException("Unexpected end of JSON input");
             char currentChar = value.charAt(index);
             while (isWhitespace(currentChar)) {
                 index++;
+                if (index >= value.length()) throw new IllegalArgumentException("Unexpected end of JSON input");
                 currentChar = value.charAt(index);
             }
             index++;
@@ -56,10 +58,13 @@ public class JsonParser {
 
         public String nextToken(){
             final StringBuilder builder = new StringBuilder();
+            if (index >= value.length()) return "";
             char c = nextNonWhitespaceChar();
 
             while (!isWhitespace(c)){
                 builder.append(c);
+                if (index >= value.length()) break;
+                c = value.charAt(index++);
             }
 
             return builder.toString();
