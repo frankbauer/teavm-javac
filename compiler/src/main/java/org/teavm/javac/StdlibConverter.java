@@ -119,6 +119,12 @@ public class StdlibConverter extends ClassVisitor {
             for (int i = 0; i < interfaces.length; ++i) {
                 interfaces[i] = rename(interfaces[i]);
             }
+            // Filter self-referential interfaces (happens with @interface TAnnotation which becomes
+            // java/lang/annotation/Annotation implementing itself after renaming)
+            final String finalName = name;
+            interfaces = java.util.Arrays.stream(interfaces)
+                    .filter(iface -> !iface.equals(finalName))
+                    .toArray(String[]::new);
         }
         if (signature != null) {
             signature = renameClassSignature(signature);
