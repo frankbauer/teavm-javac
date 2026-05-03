@@ -284,7 +284,8 @@ public final class Compiler {
                 .setStrict(true)                
                 .build();
         teavm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
-        new Patches().install(teavm);
+        new Patches().install(teavm); 
+        new JSRPCPlugin().install(teavm); 
         new JSOPlugin().install(teavm);
         new PlatformPlugin().install(teavm);
         new JCLPlugin().install(teavm);
@@ -323,6 +324,7 @@ public final class Compiler {
         context.put(DiagnosticListener.class, new DiagnosticListenerImpl(diagnosticListeners));
         var fileManager = new FileManagerImpl(sourceFiles, classFiles, sdkFiles, outputFiles);
         context.put(JavaFileManager.class, fileManager);
+        com.sun.tools.javac.util.Options.instance(context).put("-g", "");
         compiler = new SimpleJavaCompiler(context);
         compiler.prepare();
     }

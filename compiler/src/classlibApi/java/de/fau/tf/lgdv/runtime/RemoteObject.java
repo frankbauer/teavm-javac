@@ -17,65 +17,15 @@ package de.fau.tf.lgdv.runtime;
 
 import de.fau.tf.lgdv.CodeBlocks;
 import de.fau.tf.lgdv.CodeBlocksBaseMessage;
+import de.fau.tf.lgdv.NewRemoteObjectMessage;
+import de.fau.tf.lgdv.ObjectReplyMessage;
 import de.fau.tf.lgdv.json.*;
-import org.teavm.jso.JSProperty;
 
-
-
-public abstract class RemoteObject implements JsonObjectable { 
-    public interface NewRemoteObjectMessage extends CodeBlocksBaseMessage {
-        @JSProperty("json")
-        String _getJSON();
-
-        default JsonElement getJSON() {
-            String s = _getJSON();
-            return s != null ? JsonParser.parse(s) : null;
-        }
-
-        @JSProperty("json")
-        void _setJSON(String value);    
-
-        default void setJSON(JsonObjectable json) {
-            String s = json != null ? json.toJson() : null;
-            _setJSON(s);
-        }    
-    }   
-    
-    public interface ObjectReplyMessage extends NewRemoteObjectMessage {
-        @JSProperty("objid")
-        int getId();
-
-        @JSProperty("objid")
-        void setId(int value);
-
-        @JSProperty("type")
-        String _getType();
-
-        default String getType() {
-            String s = _getType();
-            return s != null ? new String(s) : null;
-        }
-
-        @JSProperty("type")
-        void setType(String value);
-
-        @JSProperty("cmd")
-        String _getCmd();
-
-        default String getCmd() {
-            String s = _getCmd();
-            return s != null ? new String(s) : null;
-        }
-
-        @JSProperty("cmd")
-        void setCmd(String value);
-    }  
-
+public abstract class RemoteObject { 
     private static int NEXT_OBJECT_ID = 1;
     public final String TYPE;
     public final int ID;
 
-   
     protected RemoteObject(String typeString) {
         this.TYPE = typeString;
         this.ID = NEXT_OBJECT_ID++;                
@@ -89,11 +39,11 @@ public abstract class RemoteObject implements JsonObjectable {
         CodeBlocks.postMessage(message, this);        
     }
 
-    protected void sendCommand(String cmd, JsonObjectable json){
+    protected void sendCommand(String cmd, JsonSerializer json){
         ObjectReplyMessage message = CodeBlocks.createJSObject();
         message.setCommand("o");
         message.setCmd(cmd);
-        message.setId(ID);
+        message.setObjId(ID);
         message.setType(TYPE);
         message.setJSON(json);
         
@@ -102,7 +52,7 @@ public abstract class RemoteObject implements JsonObjectable {
 
     protected abstract void addAttributes(JsonObject json);  
 
-    public void handleEvent(String cmd, JsonElement json){
+    public void handleEvent(String cmd, Object json){
         // Default implementation - can be overridden by subclasses
     }  
 
@@ -110,7 +60,6 @@ public abstract class RemoteObject implements JsonObjectable {
         return new JsonObject().put("type", TYPE).put("id", ID);        
     }
 
-    @Override
     public JsonObject toJsonObject(){
         JsonObject obj = this.toJsonReference();
         this.addAttributes(obj);

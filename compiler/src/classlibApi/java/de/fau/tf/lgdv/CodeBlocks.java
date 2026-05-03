@@ -15,13 +15,14 @@
  */
 package de.fau.tf.lgdv;
 
-import de.fau.tf.lgdv.math.Vec2D;
+import org.teavm.interop.Async;
+import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
-import de.fau.tf.lgdv.json.JsonSerializer;
+import de.fau.tf.lgdv.json.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
@@ -31,8 +32,6 @@ import de.fau.tf.lgdv.runtime.RemoteObject;
 public class CodeBlocks {
     @JSBody(script = "return {  };")
     public static native <T extends JSObject> T createJSObject();
-
-    private static Map<Integer, RemoteObject> eventHandlers = new HashMap<>();
 
     public static void exit(int code){
         CodeBlocksStringMessage msg = createJSObject();
@@ -57,7 +56,37 @@ public class CodeBlocks {
         Window.worker().postMessage(msg);
     }
 
-    public static void postMessage(RemoteObject.NewRemoteObjectMessage message, RemoteObject handler){
+    @JSBody(params = "obj", script = "return JSON.stringify(obj);")
+    public static native String stringify(JSObject obj);
+
+    private static Map eventHandlers = new HashMap();
+    private static Map pendingSyncCalls = new HashMap();
+    private static int nextSyncId = 1000000;
+
+    @Async
+    public static native String waitForMessage(String key);
+
+    private static void waitForMessage(final String key, final AsyncCallback callback) {
+        pendingSyncCalls.put(key, callback);
+    }
+
+    @Async
+    public static JsonElement sendQuery(String cmd, JsonSerializer json) {
+        int id = nextSyncId++;
+        postMessage(cmd, id, json);
+        String replyJson = waitForMessage(cmd + "Reply:" + id);
+        if (replyJson != null) {
+            JsonElement el = JsonParser.parse(replyJson);
+            if (el.isObject()) {
+                JsonElement inner = (JsonElement) ((JsonObject)el.getObject()).get("json");
+                if (inner != null && inner.isString()) return JsonParser.parse(inner.getString());
+            }
+            return el;
+        }
+        return null;
+    }
+
+    public static void postMessage(NewRemoteObjectMessage message, RemoteObject handler){
         eventHandlers.put(handler.ID, handler);
         CodeBlocks.postMessage(message);
     }
@@ -69,40 +98,49 @@ public class CodeBlocks {
         Window.worker().postMessage(message);
     }
 
-    private static EventListener<?> listener;
-    private static List<CodeBlocksEventFunction> eventFunctions = new ArrayList<>();
+    private static EventListener listener;
+    private static List eventFunctions = new ArrayList();
     public static void startReceivingEvents(CodeBlocksEventFunction handler){
-        if (!eventFunctions.contains(handler)) {
-            eventFunctions.add(handler);
-        }
+        if (!eventFunctions.contains(handler)) eventFunctions.add(handler);
+        if (listener != null) return;
         
-        if (listener != null) {
-        //    stopReceivingEvents();
-            return;
-        }
-        listener = (MessageEvent event) -> {
+        listener = (EventListener<MessageEvent>) (MessageEvent event) -> {
             CodeBlocksBaseMessage request = (CodeBlocksBaseMessage) event.getData();
             if (request != null) {
                 String cmd = request.getCommand();
                 if (cmd != null && cmd.startsWith("d-")) {
                     cmd = cmd.substring(2);
+                    request.setCommand(cmd);
+
+                    String syncKey = cmd + ":" + request.getId();
+                    
                     if (cmd.equals("o")) {
-                        RemoteObject.ObjectReplyMessage orm = (RemoteObject.ObjectReplyMessage) request;
-                        int id = orm.getId();
-                        RemoteObject rObj = eventHandlers.get(id);
-                        if (rObj != null ) {                            
+                        ObjectReplyMessage orm = (ObjectReplyMessage) request;
+                        syncKey = "o:" + orm.getObjId() + ":" + orm.getCmd();
+                        
+                        int id = orm.getObjId();
+                        RemoteObject rObj = (RemoteObject) eventHandlers.get(id);
+                        
+                        Object callbackRaw = pendingSyncCalls.remove(syncKey);
+                        if (callbackRaw != null) {
+                            ((AsyncCallback) callbackRaw).complete(stringify(request));
+                        }
+
+                        if (rObj != null ) {
                             if (rObj.TYPE.equals(orm.getType())) {
-                                rObj.handleEvent(orm.getCmd(), orm.getJSON());
-                            } else {
-                                System.err.println("Internal Error: Received object reply '" + orm.getCmd() + "' with wrong type: " + orm.getType() + " expected: " + rObj.TYPE);
+                                JsonElement json = orm.getJSON();
+                                rObj.handleEvent(orm.getCmd(), json);
                             }
-                        } else {
-                            System.err.println("Internal Error: Received object reply '" + orm.getCmd() + "' for unknown id: " + id);
                         }
                     } else {
-                        request.setCommand(cmd);
-                        eventFunctions.forEach(f -> f.handleEvent(request));
-                        //handler.handleEvent(request);
+                        Object callbackRaw = pendingSyncCalls.remove(syncKey);
+                        if (callbackRaw != null) {
+                            ((AsyncCallback) callbackRaw).complete(stringify(request));
+                        }
+
+                        for (Object f : eventFunctions) {
+                            ((CodeBlocksEventFunction) f).handleEvent(request);
+                        }
                     }
                 }
             }
