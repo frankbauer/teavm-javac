@@ -30,7 +30,11 @@ public class JsonElement implements JsonObjectable {
     }
 
     public int getInteger(int defaultValue){
-        if (value==null || !isInteger()) return defaultValue;
+        if (value==null) return defaultValue;
+        if (isDouble()){
+            return (int) ((Double) value);
+        }
+        if (!isInteger()) return defaultValue;
         return (Integer) value;
     }
 
@@ -41,7 +45,10 @@ public class JsonElement implements JsonObjectable {
 
     public double getDouble(double defaultValue){
         if (value==null || !isDouble()) return defaultValue;
-        return (Double) value;
+        if (isInteger()){
+            return (double)((int) value);
+        }
+        return (double) value;
     }
 
     public String getString(){
@@ -97,7 +104,7 @@ public class JsonElement implements JsonObjectable {
 
     //a method that tests if the value is a Double
     public boolean isDouble(){
-        return value instanceof Double;
+        return (value instanceof Double) || (value instanceof Integer);
     }
 
     //a method that tests if the value is an Integer
