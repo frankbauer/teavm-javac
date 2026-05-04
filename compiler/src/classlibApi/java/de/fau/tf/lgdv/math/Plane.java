@@ -42,6 +42,51 @@ public class Plane extends Geometry implements JsonObjectable {
     public final Vec3D yAxis;
 
     /**
+     * Creates a new Plane from a JsonObject.
+     * Inherits origin parsing (point 'a') from {@link Geometry#Geometry(JsonObject)}.
+     * Can be defined by:
+     * <ul>
+     *   <li>A normal vector: "normal" or "n"</li>
+     *   <li>Three points: uses 'origin' (or 'a') and additional points "b" and "c"</li>
+     * </ul>
+     * Default is Z-Plane (origin 0,0,0; normal 0,0,1).
+     * 
+     * @param o The JsonObject to deserialize from.
+     */
+    public Plane(JsonObject o) {
+        super(o);
+        if (null!=o){
+            if (o.has("normal")) {
+                this.normal = Vec3D.fromJsonElement(o.get("normal")).normalize();                                
+            } else if (o.has("n")) {
+                this.normal = Vec3D.fromJsonElement(o.get("n")).normalize();
+            } else {
+               Vec3D a = this.origin;
+               Vec3D b = Vec3D.fromJsonElement(o.get("b"));
+               Vec3D c = Vec3D.fromJsonElement(o.get("c"));
+               this.normal = b.sub(a).normalize().cross(c.sub(a).normalize()).normalize();
+            }
+            this.xAxis = normal.createPerpendicular().normalize();
+            this.yAxis = normal.cross(xAxis).normalize();
+        } else {
+            this.normal = Vec3D.ZAxis;
+            this.xAxis = Vec3D.XAxis;
+            this.yAxis = Vec3D.YAxis;
+        }        
+    }
+
+    /**
+     * Creates a new Plane from a JsonElement.
+     * 
+     * @param el The JsonElement to deserialize from.
+     * @return A new Plane instance.
+     */
+    public static Plane fromJsonElement(JsonElement el) {
+        if (el == null || !el.isObject()) return new Plane(Vec3D.Zero, Vec3D.ZAxis);
+        return new Plane(el.getObject());
+    }
+
+    /**
      * Creates a new Plane from a Point and Normal
      * 
      * @param p One Point on the PLane. This Point will act as the origin of the Planes local coordinate frame

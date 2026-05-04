@@ -26,6 +26,28 @@ public class Sphere extends Geometry implements JsonObjectable {
     public final double radius;
 
     /**
+     * Creates a new Sphere from a JsonObject.
+     * Inherits origin parsing from {@link Geometry#Geometry(JsonObject)}.
+     * Supported keys for radius: "radius", "r". Default is 1.0.
+     * 
+     * @param o The JsonObject to deserialize from.
+     */
+    public Sphere(JsonObject o) {
+        super(o);
+         if (o != null ){
+            if (o.has("r")) {
+                this.radius = o.getDouble("r", 1.0);
+            } else if (o.has("radius")) {
+                this.radius = o.getDouble("radius", 1.0);
+            } else {
+                this.radius = 1.0;
+            }
+        } else {
+            this.radius = 1.0;           
+        }     
+    }
+
+    /**
      * Creates a new Sphere from a Point and Radius
      * 
      * @param p The center of the Sphere
@@ -48,6 +70,17 @@ public class Sphere extends Geometry implements JsonObjectable {
      */
     public double getRadius() {
         return radius;
+    }
+
+    /**
+     * Creates a new Sphere from a JsonElement.
+     * 
+     * @param el The JsonElement to deserialize from.
+     * @return A new Sphere instance.
+     */
+    public static Sphere fromJsonElement(JsonElement el) {
+        if (el == null || !el.isObject()) return new Sphere(Vec3D.Zero, 1.0);
+        return new Sphere(el.getObject());
     }
 
     @Override

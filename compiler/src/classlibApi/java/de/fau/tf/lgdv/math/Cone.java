@@ -28,6 +28,57 @@ public class Cone extends Geometry implements JsonObjectable{
      * The Tip of the Cone
      */
     public final Vec3D apex;
+    
+    /**
+     * Creates a new Cone from a JsonObject.
+     * Inherits origin parsing (base center) from {@link Geometry#Geometry(JsonObject)}.
+     * Supported keys for radius: "radius", "r" (default 1.0).
+     * The tip (apex) can be defined by:
+     * <ul>
+     *   <li>"apex": A Vec3D point</li>
+     *   <li>"height" or "h": A double value (apex = origin + XAxis * height)</li>
+     * </ul>
+     * 
+     * @param o The JsonObject to deserialize from.
+     */
+    public Cone(JsonObject o) {
+        super(o);
+        
+        if (o != null ){
+            if (o.has("r")) {
+                this.radius = o.getDouble("r", 1.0);
+            } else if (o.has("radius")) {
+                this.radius = o.getDouble("radius", 1.0);
+            } else {
+                this.radius = 1.0;
+            }
+
+            if (o.has("apex")){
+                 this.apex = Vec3D.fromJsonElement(o.get("apex"));
+            } else if (o.has("height")) {
+                double h = o.getDouble("height", 1.0);
+                this.apex = this.origin.add(Vec3D.XAxis.mul(h));
+            } else {
+                double h = o.getDouble("h", 1.0);
+                this.apex = this.origin.add(Vec3D.XAxis.mul(h));
+            }            
+
+        } else {
+            this.radius = 1.0;
+            this.apex = this.origin.add(Vec3D.XAxis);
+        }        
+    }
+
+    /**
+     * Creates a new Cone from a JsonElement.
+     * 
+     * @param el The JsonElement to deserialize from.
+     * @return A new Cone instance.
+     */
+    public static Cone fromJsonElement(JsonElement el) {
+        if (el == null || !el.isObject()) return new Cone(Vec3D.Zero, 1.0, 1.0);
+        return new Cone(el.getObject());
+    }
 
     /**
      * Creates a new Cone from a Point, a Radius and a Height

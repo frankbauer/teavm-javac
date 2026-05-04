@@ -22,6 +22,44 @@ import de.fau.tf.lgdv.json.JsonObjectable;
 public class Geometry implements JsonObjectable {
     public final Vec3D origin;
 
+    /**
+     * Creates a new Geometry from a JsonObject.
+     * Supported keys for the origin: "origin", "pos", "position", "p", "a".
+     * If no key is found or o is null, Vec3D.Zero is used.
+     * 
+     * @param o The JsonObject to deserialize from.
+     */
+    public Geometry(JsonObject o) {
+        if (o!=null){
+            if (o.has("origin")){
+                this.origin = Vec3D.fromJsonElement(o.get("origin"));
+            } else if (o.has("pos")){
+                this.origin = Vec3D.fromJsonElement(o.get("pos"));
+            } else if (o.has("position")){
+                this.origin = Vec3D.fromJsonElement(o.get("position"));
+            } else if (o.has("p")){
+                this.origin = Vec3D.fromJsonElement(o.get("p"));
+            } else if (o.has("a")){
+                this.origin = Vec3D.fromJsonElement(o.get("a"));
+            } else {
+                this.origin = Vec3D.Zero;
+            }
+        } else {
+            this.origin = Vec3D.Zero;
+        }
+    }
+
+    /**
+     * Creates a new Geometry from a JsonElement.
+     * 
+     * @param el The JsonElement to deserialize from.
+     * @return A new Geometry instance.
+     */
+    public static Geometry fromJsonElement(JsonElement el) {
+        if (el == null || !el.isObject()) return new Geometry(Vec3D.Zero);
+        return new Geometry(el.getObject());
+    }
+
     public Geometry(final Vec3D origin) {
         this.origin = origin;
     }

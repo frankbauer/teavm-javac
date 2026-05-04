@@ -26,29 +26,26 @@ public class JsonElement implements JsonObjectable {
     }
 
     public int getInteger(){
-        return (Integer) value;
+        return ((Number) value).intValue();
     }
 
     public int getInteger(int defaultValue){
-        if (value==null) return defaultValue;
-        if (isDouble()){
-            return (int) ((Double) value);
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
         }
-        if (!isInteger()) return defaultValue;
-        return (Integer) value;
+        return defaultValue;
     }
 
 
     public double getDouble(){
-        return (Double) value;
+        return ((Number) value).doubleValue();
     }
 
     public double getDouble(double defaultValue){
-        if (value==null || !isDouble()) return defaultValue;
-        if (isInteger()){
-            return (double)((int) value);
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
         }
-        return (double) value;
+        return defaultValue;
     }
 
     public String getString(){

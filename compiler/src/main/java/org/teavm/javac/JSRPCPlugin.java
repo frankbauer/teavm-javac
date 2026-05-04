@@ -362,6 +362,17 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
                                     ValueType.object(JSON_ARRAY))));
                     return;
                 }
+                // Single JsonObjectable → instantiate from payload
+                if (implementsInterface(cn, JSON_OBJECTABLE, hierarchy)) {
+                    MethodReference parseRef = new MethodReference(CODE_BLOCKS, "parseMessageJSON",
+                            ValueType.object(CODE_BLOCKS_BASE_MESSAGE), ValueType.object(JSON_ELEMENT));
+                    ValueEmitter payloadElem = pe.invoke(parseRef, msgVar);
+                    ValueEmitter instance = emitInstantiateFromJson(pe, payloadElem, cn, hierarchy);
+                    if (instance != null) {
+                        pe.invoke(method.getReference(), instance);
+                        return;
+                    }
+                }
             }
         }
 
@@ -444,31 +455,41 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
                         ValueType.object(JSON_ARRAY), ValueType.object(JSON_ARRAY)), pe.construct(JSON_ARRAY));
             }
             if (implementsInterface(cn, JSON_OBJECTABLE, hierarchy)) {
-                ClassReader typeClass = hierarchy.getClassSource().get(cn);
-                if (typeClass != null) {
-                    // Prefer (JsonObject) constructor
-                    if (typeClass.getMethod(new MethodDescriptor(
-                            "<init>", ValueType.object(JSON_OBJECT), ValueType.VOID)) != null) {
-                        ValueEmitter subObj = jsonObj.invokeVirtual(new MethodReference(JSON_OBJECT, "get",
-                                ValueType.object("java.lang.String"), ValueType.object(JSON_ELEMENT)), key)
-                            .invokeVirtual(new MethodReference(JSON_ELEMENT, "getObject",
-                                ValueType.object(JSON_OBJECT), ValueType.object(JSON_OBJECT)), pe.construct(JSON_OBJECT));
-                        return pe.construct(cn, subObj);
-                    }
-                    // Static fromJsonElement(JsonElement) factory — used e.g. for enums
-                    if (typeClass.getMethod(new MethodDescriptor("fromJsonElement",
-                            ValueType.object(JSON_ELEMENT), ValueType.object(cn))) != null) {
-                        ValueEmitter jsonElem = jsonObj.invokeVirtual(new MethodReference(JSON_OBJECT, "get",
-                                ValueType.object("java.lang.String"), ValueType.object(JSON_ELEMENT)), key);
-                        return pe.invoke(new MethodReference(cn, "fromJsonElement",
-                                ValueType.object(JSON_ELEMENT), ValueType.object(cn)), jsonElem);
-                    }
-                }
+                ValueEmitter jsonElem = jsonObj.invokeVirtual(new MethodReference(JSON_OBJECT, "get",
+                        ValueType.object("java.lang.String"), ValueType.object(JSON_ELEMENT)), key);
+                ValueEmitter instance = emitInstantiateFromJson(pe, jsonElem, cn, hierarchy);
+                if (instance != null) return instance;
             }
         }
         // Unrecognised type — raw cast; will fail loudly at runtime
         return jsonObj.invokeVirtual(new MethodReference(JSON_OBJECT, "get",
                 ValueType.object("java.lang.String"), ValueType.object(JSON_ELEMENT)), key).cast(type);
+    }
+
+    private ValueEmitter emitInstantiateFromJson(ProgramEmitter pe, ValueEmitter jsonElem, String cn, ClassHierarchy hierarchy) {
+        ClassReader typeClass = hierarchy.getClassSource().get(cn);
+        if (typeClass == null) return null;
+
+        // 1. Static fromJsonElement(JsonElement) factory — used e.g. for enums or custom dispatching
+        if (typeClass.getMethod(new MethodDescriptor("fromJsonElement",
+                ValueType.object(JSON_ELEMENT), ValueType.object(cn))) != null) {
+            return pe.invoke(new MethodReference(cn, "fromJsonElement",
+                    ValueType.object(JSON_ELEMENT), ValueType.object(cn)), jsonElem);
+        }
+
+        // 2. (JsonObject) constructor
+        if (typeClass.getMethod(new MethodDescriptor("<init>", ValueType.object(JSON_OBJECT), ValueType.VOID)) != null) {
+            ValueEmitter subObj = jsonElem.invokeVirtual(new MethodReference(JSON_ELEMENT, "getObject",
+                    ValueType.object(JSON_OBJECT), ValueType.object(JSON_OBJECT)), pe.construct(JSON_OBJECT));
+            return pe.construct(cn, subObj);
+        }
+        // 3. (JsonArray) constructor
+        if (typeClass.getMethod(new MethodDescriptor("<init>", ValueType.object(JSON_ARRAY), ValueType.VOID)) != null) {
+            ValueEmitter subArr = jsonElem.invokeVirtual(new MethodReference(JSON_ELEMENT, "getArray",
+                    ValueType.object(JSON_ARRAY), ValueType.object(JSON_ARRAY)), pe.construct(JSON_ARRAY));
+            return pe.construct(cn, subArr);
+        }
+        return null;
     }
 
     private void injectStaticEventRegistration(ClassHolder cls, String handlerName,

@@ -16,6 +16,7 @@
 package de.fau.tf.lgdv.math;
 
 import java.awt.Point;
+import de.fau.tf.lgdv.json.JsonArray;
 import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.json.JsonObjectable;
@@ -48,9 +49,49 @@ public class Vec2D implements JsonObjectable{
      */
     public final double y;
 
+    /**
+     * Creates a new Vec2D from a JsonObject.
+     * Expected keys: "x" (default 0.0), "y" (default 0.0).
+     * 
+     * @param o The JsonObject to deserialize from.
+     */
     public Vec2D(JsonObject o) {
-        this.x = o.getDouble("x", 0.0);
-        this.y = o.getDouble("y", 0.0);
+        this.x = o != null ? o.getDouble("x", 0.0) : 0.0;
+        this.y = o != null ? o.getDouble("y", 0.0) : 0.0;
+    }
+
+    /**
+     * Creates a new Vec2D from a JsonArray.
+     * Expected order: [x, y].
+     * 
+     * @param a The JsonArray to deserialize from.
+     */
+    public Vec2D(JsonArray a) {
+        this.x = a != null && a.size() > 0 ? a.get(0).getDouble(0.0) : 0.0;
+        this.y = a != null && a.size() > 1 ? a.get(1).getDouble(0.0) : 0.0;
+    }
+
+    /**
+     * Creates a new Vec2D from a JsonElement.
+     * Supports:
+     * <ul>
+     *   <li>JsonObject with keys "x", "y" (default 0.0)</li>
+     *   <li>JsonArray with order [x, y]</li>
+     * </ul>
+     * 
+     * @param el The JsonElement to deserialize from.
+     * @return A new Vec2D instance.
+     */
+    public static Vec2D fromJsonElement(JsonElement el) {
+        if (el == null || el.isNull()) {
+            return Vec2D.Zero;
+        } else if (el.isObject()) {
+            return new Vec2D(el.getObject());
+        } else if (el.isArray()) {
+            return new Vec2D(el.getArray());
+        } else {
+            return Vec2D.Zero;
+        }
     }
 
     /**

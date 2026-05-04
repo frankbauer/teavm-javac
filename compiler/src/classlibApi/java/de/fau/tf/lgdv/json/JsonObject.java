@@ -121,6 +121,20 @@ public class JsonObject implements JsonObjectable {
         return el != null ? el.getDate(defaultValue) : defaultValue;
     }
 
+    public JsonObject getObject(String key){
+        JsonElement el = map.get(key);
+        return el != null ? el.getObject() : null;
+    }
+
+    public JsonObject getObject(String key, JsonObject defaultValue){
+        JsonElement el = map.get(key);
+        return el != null ? el.getObject(defaultValue) : defaultValue;
+    }
+
+    public boolean has(String key){
+        return map.containsKey(key);
+    }
+
     public JsonElement get(String key){
         return map.get(key);
     }

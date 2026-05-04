@@ -15,6 +15,7 @@
  */
 package de.fau.tf.lgdv.math;
 
+import de.fau.tf.lgdv.json.JsonArray;
 import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.json.JsonObjectable;
@@ -58,6 +59,53 @@ public class Vec3D implements JsonObjectable {
      * The z-Component.
      */
     public final double z;
+
+    /**
+     * Creates a new Vec3D from a JsonObject.
+     * Expected keys: "x" (default 0.0), "y" (default 0.0), "z" (default 0.0).
+     * 
+     * @param o The JsonObject to deserialize from.
+     */
+    public Vec3D(JsonObject o) {
+        this.x = o != null ? o.getDouble("x", 0.0) : 0.0;
+        this.y = o != null ? o.getDouble("y", 0.0) : 0.0;
+        this.z = o != null ? o.getDouble("z", 0.0) : 0.0;
+    }
+
+    /**
+     * Creates a new Vec3D from a JsonArray.
+     * Expected order: [x, y, z].
+     * 
+     * @param a The JsonArray to deserialize from.
+     */
+    public Vec3D(JsonArray a) {
+        this.x = a != null && a.size() > 0 ? a.get(0).getDouble(0.0) : 0.0;
+        this.y = a != null && a.size() > 1 ? a.get(1).getDouble(0.0) : 0.0;
+        this.z = a != null && a.size() > 2 ? a.get(2).getDouble(0.0) : 0.0;
+    }
+
+    /**
+     * Creates a new Vec3D from a JsonElement.
+     * Supports:
+     * <ul>
+     *   <li>JsonObject with keys "x", "y", "z" (default 0.0)</li>
+     *   <li>JsonArray with order [x, y, z]</li>
+     * </ul>
+     * 
+     * @param el The JsonElement to deserialize from.
+     * @return A new Vec3D instance.
+     */
+    public static Vec3D fromJsonElement(JsonElement el) {
+        if (el == null || el.isNull()) {
+            return Vec3D.Zero;
+        } else if (el.isObject()) {
+            return new Vec3D(el.getObject());
+        } else if (el.isArray()) {
+            return new Vec3D(el.getArray());
+        } else {
+            return Vec3D.Zero;
+        }
+    }
 
     /**
      * Creates a new Vector

@@ -31,6 +31,43 @@ public class Ray extends Geometry  implements JsonObjectable{
     public final Vec3D dir;
 
     /**
+     * Creates a new Ray from a JsonObject.
+     * Inherits origin parsing from {@link Geometry#Geometry(JsonObject)}.
+     * Supported keys for direction: "dir" (vector), "target" (point), "to" (point).
+     * If "target" or "to" is provided, direction is (target - origin).
+     * Default direction is ZAxis (0,0,1).
+     * 
+     * @param o The JsonObject to deserialize from.
+     */
+    public Ray(JsonObject o) {
+        super(o);
+        if (o != null) {
+            if (o.has("dir")) {
+                this.dir = Vec3D.fromJsonElement(o.get("dir")).normalize();
+            } else if (o.has("target")) {
+                this.dir = Vec3D.fromJsonElement(o.get("target")).sub(this.origin).normalize();
+            } else if (o.has("to")) {
+                this.dir = Vec3D.fromJsonElement(o.get("to")).sub(this.origin).normalize();
+            } else {
+                this.dir = Vec3D.ZAxis;
+            }
+        } else {
+            this.dir = Vec3D.ZAxis;
+        }
+    }
+
+    /**
+     * Creates a new Ray from a JsonElement.
+     * 
+     * @param el The JsonElement to deserialize from.
+     * @return A new Ray instance.
+     */
+    public static Ray fromJsonElement(JsonElement el) {
+        if (el == null || !el.isObject()) return new Ray(Vec3D.Zero, Vec3D.ZAxis);
+        return new Ray(el.getObject());
+    }
+
+    /**
      * Creates a new Ray: ray = p + t*dir with t from R+. <br>
      * A normalized Version of the Direction is stored and returned by {@link #getDirection()}
      * 

@@ -23,6 +23,53 @@ public class Line2D implements JsonObjectable{
     public final Vec2D origin;
     public final Vec2D dir;
 
+    /**
+     * Creates a new Line2D from a JsonObject.
+     * Supported keys for origin: "origin", "start", "p1".
+     * Supported keys for direction/end: "dir" (as vector), "end" (as point), "p2" (as point).
+     * If "end" or "p2" is provided, the direction is calculated as (end - origin).
+     * Defaults to origin (0,0) and direction (1,0).
+     * 
+     * @param o The JsonObject to deserialize from.
+     */
+    public Line2D(JsonObject o) {
+        if (o != null) {
+            if (o.has("origin")) {
+                this.origin = Vec2D.fromJsonElement(o.get("origin"));
+            } else if (o.has("start")) {
+                this.origin = Vec2D.fromJsonElement(o.get("start"));
+            } else if (o.has("p1")) {
+                this.origin = Vec2D.fromJsonElement(o.get("p1"));
+            } else {
+                this.origin = Vec2D.Zero;
+            }
+
+            if (o.has("dir")) {
+                this.dir = Vec2D.fromJsonElement(o.get("dir"));
+            } else if (o.has("end")) {
+                this.dir = Vec2D.fromJsonElement(o.get("end")).sub(this.origin);
+            } else if (o.has("p2")) {
+                this.dir = Vec2D.fromJsonElement(o.get("p2")).sub(this.origin);
+            } else {
+                this.dir = Vec2D.XAxis;
+            }
+        } else {
+            this.origin = Vec2D.Zero;
+            this.dir = Vec2D.XAxis;
+        }
+    }
+
+    /**
+     * Creates a new Line2D from a JsonElement.
+     * 
+     * @param el The JsonElement to deserialize from.
+     * @return A new Line2D instance.
+     */
+    public static Line2D fromJsonElement(JsonElement el) {
+        if (el == null || !el.isObject()) return new Line2D(Vec2D.Zero, Vec2D.XAxis);
+        return new Line2D(el.getObject());
+    }
+
     public Line2D(Vec2D start, Vec2D dir) {
         this.origin = start;
         this.dir = dir;
