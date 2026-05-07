@@ -55,8 +55,8 @@ public class Size implements JsonObjectable {
      * @param a The JsonArray to deserialize from.
      */
     public Size(JsonArray a) {
-        this.width = a != null && a.size() > 0 ? a.get(0).getInteger(0) : 0;
-        this.height = a != null && a.size() > 1 ? a.get(1).getInteger(0) : 0;
+        this.width = a != null && a.size() > 0 ? a.get(0).getInt(0) : 0;
+        this.height = a != null && a.size() > 1 ? a.get(1).getInt(0) : 0;
     }
 
     /**

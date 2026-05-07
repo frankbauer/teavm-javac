@@ -73,11 +73,11 @@ public class JsonObject implements JsonObjectable {
     }
 
     public int getInt(String key){
-        return map.get(key).getInteger();
+        return map.get(key).getInt();
     }
     public int getInt(String key, int defaultValue){
         JsonElement el = map.get(key);
-        return el != null ? el.getInteger(defaultValue) : defaultValue;
+        return el != null ? el.getInt(defaultValue) : defaultValue;
     }
 
     public double getDouble(String key){

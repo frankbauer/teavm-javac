@@ -88,6 +88,45 @@ public class JsonArray implements java.util.List<JsonElement>, JsonObjectable {
         return list.add(new JsonElement(o));
     }
 
+    public JsonArray push(JsonElement e){
+        list.add(e);
+        return this;
+    }
+
+    public JsonArray push(JsonObject o){
+        list.add(new JsonElement(o));
+        return this;
+    }
+
+    public JsonArray push(JsonObjectable o){
+        return push(o.toJsonElement());
+    }
+
+    public JsonArray push(JsonArray o){
+        list.add(new JsonElement(o));
+        return this;
+    }
+
+    public JsonArray push(String o){
+        list.add(new JsonElement(o));
+        return this;
+    }
+
+    public JsonArray push(double o){
+        list.add(new JsonElement(o));
+        return this;
+    }
+
+    public JsonArray push(int o){
+        list.add(new JsonElement(o));
+        return this;
+    }
+
+    public JsonArray push(boolean o){
+        list.add(new JsonElement(o));
+        return this;
+    }
+
     @Override
     public boolean remove(Object o) {
         return list.remove(o);
@@ -121,6 +160,20 @@ public class JsonArray implements java.util.List<JsonElement>, JsonObjectable {
     @Override
     public void clear(){
         list.clear();
+    }
+
+    public int getInt(int index, int defaultValue) {
+        if (index < 0 || index >= list.size()) return defaultValue;
+        JsonElement el = list.get(index);
+        if (el == null || el.isNull()) return defaultValue;        
+        return el.getInt(defaultValue);
+    }
+
+    public double getDouble(int index, double defaultValue) {
+        if (index < 0 || index >= list.size()) return defaultValue;
+        JsonElement el = list.get(index);
+        if (el == null || el.isNull()) return defaultValue;        
+        return el.getDouble(defaultValue);
     }
 
     @Override

@@ -48,8 +48,8 @@ public class Int2D implements JsonObjectable{
      * @param a The JsonArray to deserialize from.
      */
     public Int2D(JsonArray a) {
-        this.x = a != null && a.size() > 0 ? a.get(0).getInteger(0) : 0;
-        this.y = a != null && a.size() > 1 ? a.get(1).getInteger(0) : 0;
+        this.x = a != null && a.size() > 0 ? a.get(0).getInt(0) : 0;
+        this.y = a != null && a.size() > 1 ? a.get(1).getInt(0) : 0;
     }
 
     /**

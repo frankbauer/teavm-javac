@@ -25,11 +25,11 @@ public class JsonElement implements JsonObjectable {
         return value;
     }
 
-    public int getInteger(){
+    public int getInt(){
         return ((Number) value).intValue();
     }
 
-    public int getInteger(int defaultValue){
+    public int getInt(int defaultValue){
         if (value instanceof Number) {
             return ((Number) value).intValue();
         }
