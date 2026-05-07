@@ -182,7 +182,8 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
         ValueEmitter payload = emitPayload(pe, method, offset, context.getHierarchy(), originalProgram, paramHints);
         if (isRemoteObject) {
             MethodReference sendRef = new MethodReference(REMOTE_OBJECT, "sendCommand", ValueType.object("java.lang.String"), ValueType.object(JSON_SERIALIZER), ValueType.BOOLEAN, ValueType.VOID);
-            pe.var(0, ValueType.object(cls.getName())).invokeVirtual(sendRef, pe.constant(commandName), payload, pe.constant(forceImmediate));
+            pe.var(0, ValueType.object(cls.getName())).invokeVirtual(sendRef, pe.constant(commandName), payload,
+                    pe.constant(forceImmediate ? 1 : 0).cast(ValueType.BOOLEAN));
         } else {
             MethodReference postRef = new MethodReference(CODE_BLOCKS, "postMessage", ValueType.object("java.lang.String"), ValueType.object(JSON_SERIALIZER), ValueType.VOID);
             pe.invoke(postRef, pe.constant(commandName), payload);
@@ -429,7 +430,7 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
         if (type == ValueType.BOOLEAN) {
             return jsonObj.invokeVirtual(new MethodReference(JSON_OBJECT, "getBoolean",
                     ValueType.object("java.lang.String"), ValueType.BOOLEAN, ValueType.BOOLEAN),
-                    key, pe.constant(false));
+                    key, pe.constant(0).cast(ValueType.BOOLEAN));
         }
         if (type instanceof ValueType.Object) {
             String cn = ((ValueType.Object) type).getClassName();
