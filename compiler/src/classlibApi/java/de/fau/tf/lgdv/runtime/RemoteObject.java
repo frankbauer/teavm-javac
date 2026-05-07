@@ -22,6 +22,7 @@ import de.fau.tf.lgdv.runtime.annotations.JSEvent;
 
 public abstract class RemoteObject { 
     private static int NEXT_OBJECT_ID = 1;
+    static CommandBuffer currentBuffer;
     public final String TYPE;
     public final int ID;
     protected int creationQueryId ;
@@ -73,13 +74,34 @@ public abstract class RemoteObject {
     }
 
     protected void sendCommand(String cmd, JsonSerializer json) {
-        ObjectReplyMessage message = CodeBlocks.createJSObject();
-        message.setCommand("o");
-        message.setCmd(cmd);
-        message.setObjId(ID);
-        message.setType(TYPE);
-        message.setJSON(json);
-        CodeBlocks.postMessage(message);
+        sendCommand(cmd, json, false);
+    }
+
+    protected void sendCommand(String cmd, JsonSerializer json, boolean forceImmediate) {
+        if (!forceImmediate && currentBuffer != null) {
+            JsonObject data;
+            if (json instanceof JsonObject) {
+                data = (JsonObject) json;
+            } else if (json != null) {
+                JsonElement element = JsonParser.parse(json.toJson());
+                if (element.isObject()) {
+                    data = element.getObject();
+                } else {
+                    data = new JsonObject().put("value", element);
+                }
+            } else {
+                data = new JsonObject();
+            }
+            currentBuffer.addCommand(cmd, this, data);
+        } else {
+            ObjectReplyMessage message = CodeBlocks.createJSObject();
+            message.setCommand("o");
+            message.setCmd(cmd);
+            message.setObjId(ID);
+            message.setType(TYPE);
+            message.setJSON(json);
+            CodeBlocks.postMessage(message);
+        }
     }
 
     protected JsonElement sendQuery(String cmd, JsonSerializer json) {

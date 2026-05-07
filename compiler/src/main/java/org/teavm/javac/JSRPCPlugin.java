@@ -145,6 +145,7 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
     private void transformCommand(ClassHolder cls, MethodHolder method, boolean isRemoteObject, ClassHolderTransformerContext context) {
         AnnotationReader ann = method.getAnnotations().get(JS_COMMAND);
         String commandName = ann != null && ann.getValue("value") != null ? ann.getValue("value").getString() : method.getName();
+        boolean forceImmediate = ann != null && ann.getValue("forceImmediate") != null && ann.getValue("forceImmediate").getBoolean();
         String[] paramHints = readParamHints(ann);
         int offset = method.getModifiers().contains(ElementModifier.STATIC) ? 0 : 1;
         org.teavm.model.Program originalProgram = method.getProgram();
@@ -166,22 +167,22 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
             } else {
                 pe.var(0, ValueType.object(cls.getName())).invokeVirtual(new MethodReference(cls.getName(), renamed.getName(), method.getSignature()), args);
             }
-            emitCommandLogic(pe, cls, method, commandName, isRemoteObject, offset, context, originalProgram, paramHints);
+            emitCommandLogic(pe, cls, method, commandName, isRemoteObject, offset, context, originalProgram, paramHints, forceImmediate);
             pe.exit();
         } else {
             ProgramEmitter pe = ProgramEmitter.create(method, context.getHierarchy());
-            emitCommandLogic(pe, cls, method, commandName, isRemoteObject, offset, context, null, paramHints);
+            emitCommandLogic(pe, cls, method, commandName, isRemoteObject, offset, context, null, paramHints, forceImmediate);
             pe.exit();
         }
     }
 
     private void emitCommandLogic(ProgramEmitter pe, ClassHolder cls, MethodHolder method, String commandName,
             boolean isRemoteObject, int offset, ClassHolderTransformerContext context,
-            org.teavm.model.Program originalProgram, String[] paramHints) {
+            org.teavm.model.Program originalProgram, String[] paramHints, boolean forceImmediate) {
         ValueEmitter payload = emitPayload(pe, method, offset, context.getHierarchy(), originalProgram, paramHints);
         if (isRemoteObject) {
-            MethodReference sendRef = new MethodReference(REMOTE_OBJECT, "sendCommand", ValueType.object("java.lang.String"), ValueType.object(JSON_SERIALIZER), ValueType.VOID);
-            pe.var(0, ValueType.object(cls.getName())).invokeVirtual(sendRef, pe.constant(commandName), payload);
+            MethodReference sendRef = new MethodReference(REMOTE_OBJECT, "sendCommand", ValueType.object("java.lang.String"), ValueType.object(JSON_SERIALIZER), ValueType.BOOLEAN, ValueType.VOID);
+            pe.var(0, ValueType.object(cls.getName())).invokeVirtual(sendRef, pe.constant(commandName), payload, pe.constant(forceImmediate));
         } else {
             MethodReference postRef = new MethodReference(CODE_BLOCKS, "postMessage", ValueType.object("java.lang.String"), ValueType.object(JSON_SERIALIZER), ValueType.VOID);
             pe.invoke(postRef, pe.constant(commandName), payload);
@@ -428,7 +429,7 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
         if (type == ValueType.BOOLEAN) {
             return jsonObj.invokeVirtual(new MethodReference(JSON_OBJECT, "getBoolean",
                     ValueType.object("java.lang.String"), ValueType.BOOLEAN, ValueType.BOOLEAN),
-                    key, pe.constant(0));
+                    key, pe.constant(false));
         }
         if (type instanceof ValueType.Object) {
             String cn = ((ValueType.Object) type).getClassName();

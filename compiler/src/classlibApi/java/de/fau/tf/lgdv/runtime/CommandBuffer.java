@@ -75,6 +75,14 @@ public class CommandBuffer {
         );
     }
     
+    public void activate(){
+        RemoteObject.currentBuffer = this;
+    }
+
+    public static void deactivate(){
+        RemoteObject.currentBuffer = null;
+    }
+    
     public void addCommand(String commandJson){
         commands.add(commandJson);
     }
