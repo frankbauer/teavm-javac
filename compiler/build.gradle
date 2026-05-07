@@ -25,23 +25,59 @@ dependencies {
     classlibInput libs.teavm.classlib
     classlibInput libs.teavm.jso
     classlibInput libs.teavm.jso.apis
+    classlibInput libs.teavm.interop
     classlibAuxInput libs.teavm.core
     classlibAuxInput libs.teavm.jso.impl
-    classlibAuxInput libs.teavm.interop
     classlibAuxInput libs.teavm.platform
     classlibAuxInput libs.jzlib
 }
 
 sourceSets {
     classlibApi {
+        java.srcDir(project.layout.buildDirectory.dir("generated/sources/classlibApiBuildInfo"))
     }
     classlibEmu {
     }
 }
 
+def classlibApiBuildInfoDir = project.layout.buildDirectory.dir("generated/sources/classlibApiBuildInfo")
+
+def generateCodeBlocksBuildInfo = tasks.register("generateCodeBlocksBuildInfo") {
+    def outputDirProvider = classlibApiBuildInfoDir
+    outputs.dir(outputDirProvider)
+    inputs.property("codeblocks.version", providers.gradleProperty("codeblocks.version").orElse("0.0.0"))
+    doLast {
+        def outputDir = outputDirProvider.get().asFile
+        def packageDir = new File(outputDir, "de/fau/tf/lgdv")
+        packageDir.mkdirs()
+        def version = providers.gradleProperty("codeblocks.version").orElse("0.0.0").get()
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+        new File(packageDir, "CodeBlocksBuildInfo.java").text = """
+package de.fau.tf.lgdv;
+
+final class CodeBlocksBuildInfo {
+    private CodeBlocksBuildInfo() {
+    }
+
+    static final String VERSION = \"${version}\";
+}
+""".trim() + "\n"
+    }
+}
+
+tasks.named("compileClasslibApiJava") {
+    dependsOn generateCodeBlocksBuildInfo
+}
+
+tasks.named("generateWasmGC") {
+    dependsOn generateCodeBlocksBuildInfo
+}
+
 dependencies {
     classlibApiCompileOnly libs.teavm.jso
     classlibApiCompileOnly libs.teavm.jso.apis
+    classlibApiCompileOnly libs.teavm.interop
     classlibEmuCompileOnly libs.teavm.jso
     classlibEmuCompileOnly libs.teavm.jso.apis
 }
@@ -95,6 +131,7 @@ def unpackTeaVMClasslib = tasks.register("unpackTeaVMClassLib", Copy) {
         configurations.classlibInput.collect { zipTree(it) }
     }
     exclude "META-INF/MANIFEST.MF"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     into classLibTmpDir
 }
 
@@ -114,6 +151,7 @@ def repackCldr = tasks.register("repackCldr", Zip) {
 
 def prepareTeaVMClassLib = tasks.register("prepareTeaVMClassLib", Copy) {
     dependsOn unpackTeaVMClasslib, repackCldr
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(unpackTeaVMClasslib) {
         exclude "org/teavm/classlib/impl/unicode/cldr-json.zip"
     }

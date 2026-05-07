@@ -23,6 +23,7 @@ import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
 import de.fau.tf.lgdv.json.*;
+import de.fau.tf.lgdv.json.Version;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
@@ -32,6 +33,8 @@ import de.fau.tf.lgdv.runtime.NewRemoteObjectMessage;
 import de.fau.tf.lgdv.runtime.ObjectReplyMessage;
 
 public class CodeBlocks {
+    private static final Version BUILD_VERSION = new Version(CodeBlocksBuildInfo.VERSION);
+
     @JSBody(script = "return {  };")
     public static native <T extends JSObject> T createJSObject();
 
@@ -40,6 +43,13 @@ public class CodeBlocks {
      */
     public static String getSessionId() {
         return "";
+    }
+
+    /**
+     * Returns the build version of this CodeBlocks runtime.
+     */
+    public static Version getVersion() {
+        return BUILD_VERSION;
     }
 
     public static void exit(int code){

@@ -7,7 +7,7 @@ def revision = providers.gradleProperty("jdk.revision").get()
 
 def downloadJDK = tasks.register("downloadJDK", Download) {
     src "https://github.com/openjdk/jdk25u/archive/${revision}.zip"
-    dest layout.buildDirectory.file("jdk-${revision}.zip")
+    dest layout.projectDirectory.file(".jdk_cache/jdk-${revision}.zip")
     overwrite false
 }
 
