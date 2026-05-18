@@ -172,6 +172,17 @@ public class Layer extends RemoteObject {
     @JSCommand(value = "setTextShadow", params = {"offsetX", "offsetY", "blurRadius", "color"})
     public native void setTextShadow(int offsetX, int offsetY, int blurRadius, Color color);
 
+    @JSCommand(value = "setPadding", params = {"top", "right", "bottom", "left"})
+    public native void setPadding(int top, int right, int bottom, int left);
+
+    public void setPadding(int vertical, int horizontal) {
+        setPadding(vertical, horizontal, vertical, horizontal);
+    }
+
+    public void setPadding(int all) {
+        setPadding(all, all, all, all);
+    }
+
     public void setBackground(Image image) {
         JsonObject payload = new JsonObject();
         if (image != null) {
