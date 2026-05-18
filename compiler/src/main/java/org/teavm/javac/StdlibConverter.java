@@ -143,8 +143,15 @@ public class StdlibConverter extends ClassVisitor {
 
     @Override
     public void visitInnerClass(String name, String outerName, String innerName, int access) {
-        super.visitInnerClass(rename(name), outerName != null ? rename(outerName) : null,
-                innerName != null ? renameSimpleName(innerName) : null, access);
+        var renamedName = rename(name);
+        var renamedOuterName = outerName != null ? rename(outerName) : null;
+        String renamedInnerName = innerName;
+        if (innerName != null) {
+            var fromPrefixedClasslib = (name != null && name.startsWith(PREFIX))
+                    || (outerName != null && outerName.startsWith(PREFIX));
+            renamedInnerName = fromPrefixedClasslib ? renameSimpleName(innerName) : innerName;
+        }
+        super.visitInnerClass(renamedName, renamedOuterName, renamedInnerName, access);
     }
 
     private String renameSimpleName(String name) {
