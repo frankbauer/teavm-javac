@@ -5,7 +5,7 @@ import de.fau.tf.lgdv.runtime.annotations.JSCommand;
 import de.fau.tf.lgdv.json.JsonObject;
 import de.fau.tf.lgdv.math.Vec2D;
 
-public class Div extends RemoteObject {
+public class Layer extends RemoteObject {
     public enum BorderType {
         NONE,
         SOLID,
@@ -53,37 +53,37 @@ public class Div extends RemoteObject {
 
     public final String text;
     public final String className;
-    public final Div parent;
+    public final Layer parent;
 
-    private static Div requireParent(Div parent) {
+    private static Layer requireParent(Layer parent) {
         if (parent == null) {
             throw new IllegalArgumentException("parent must not be null");
         }
         return parent;
     }
 
-    public Div() {
+    public Layer() {
         this(null, null, null);
     }
 
-    public Div(String text) {
+    public Layer(String text) {
         this(text, null, null);
     }
 
-    public Div(Div parent) {
+    public Layer(Layer parent) {
         this(null, null, requireParent(parent));
     }
 
-    public Div(String text, String className) {
+    public Layer(String text, String className) {
         this(text, className, null);
     }
 
-    public Div(String text, Div parent) {
+    public Layer(String text, Layer parent) {
         this(text, null, requireParent(parent));
     }
 
-    public Div(String text, String className, Div parent) {
-        super("DIV");
+    public Layer(String text, String className, Layer parent) {
+        super("LAYER");
         this.text = text;
         this.className = className;
         this.parent = parent;
