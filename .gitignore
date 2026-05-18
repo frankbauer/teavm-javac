@@ -12,3 +12,4 @@ node_modules
 compiler/build/
 javac/build/
 dist/
+template/libraries/
