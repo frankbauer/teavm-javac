@@ -21,6 +21,27 @@ public class Canvas {
         return new Int2D(0, 0);
     }
 
+    /** Size of the canvas in CSS pixels, i.e. in the coordinates used by all drawing commands. */
+    public static Vec2D getSize() {
+        JsonElement el = getScreenSize();
+        if (el != null && el.isObject()) {
+            JsonObject obj = el.getObject();
+            double ratio = obj.getDouble("pixelRatio", 1);
+            return new Vec2D(obj.getDouble("cssWidth", obj.getInt("width", 0) / ratio),
+                             obj.getDouble("cssHeight", obj.getInt("height", 0) / ratio));
+        }
+        return new Vec2D(0, 0);
+    }
+
+    /** Ratio between device pixels ({@link #getScreenDimensions()}) and CSS pixels ({@link #getSize()}). */
+    public static double getPixelRatio() {
+        JsonElement el = getScreenSize();
+        if (el != null && el.isObject()) {
+            return el.getObject().getDouble("pixelRatio", 1);
+        }
+        return 1;
+    }
+
     private static List<MouseEvent> mouseEventListeners = new ArrayList<>();
     private static List<KeyEvent> keyEventListeners = new ArrayList<>();
     private static List<TickEvent> tickEventListeners = new ArrayList<>();
@@ -43,7 +64,7 @@ public class Canvas {
     @JSCommand
     public static native void disableTicks();
 
-    @JSCommand
+    @JSCommand(params = {"enabled"})
     public static native void setTickMode(boolean enabled);
 
     @JSCommand
@@ -61,21 +82,21 @@ public class Canvas {
         CodeBlocks.postMessage(enabled ? "enableInputEvent" : "disableInputEvent", type.getEventName());
     }
 
-    @JSCommand
+    @JSCommand(params = {"value"})
     public static native void setStrokeStyle(String style);
     public static void setStrokeStyle(Color color) { setStrokeStyle(color.toRgbaString()); }
 
-    @JSCommand
+    @JSCommand(params = {"value"})
     public static native void setFillStyle(String style);
     public static void setFillStyle(Color color) { setFillStyle(color.toRgbaString()); }
 
-    @JSCommand
+    @JSCommand(params = {"value"})
     public static native void setLineWidth(double width);
 
-    @JSCommand
+    @JSCommand(params = {"value"})
     public static native void setFont(String font);
 
-    @JSCommand
+    @JSCommand(params = {"value"})
     public static native void setTextAlign(String align);
 
     @JSCommand
@@ -90,28 +111,28 @@ public class Canvas {
     @JSCommand
     public static native void fill();
 
-    @JSCommand
+    @JSCommand(params = {"x", "y"})
     public static native void moveTo(double x, double y);
 
-    @JSCommand
+    @JSCommand(params = {"x", "y"})
     public static native void lineTo(double x, double y);
 
-    @JSCommand
+    @JSCommand(params = {"x", "y", "w", "h"})
     public static native void fillRect(double x, double y, double w, double h);
 
-    @JSCommand
+    @JSCommand(params = {"x", "y", "w", "h"})
     public static native void strokeRect(double x, double y, double w, double h);
 
-    @JSCommand
+    @JSCommand(params = {"x", "y", "w", "h"})
     public static native void clearRect(double x, double y, double w, double h);
 
-    @JSCommand
+    @JSCommand(params = {"x", "y", "radius", "startAngle", "endAngle", "anticlockwise"})
     public static native void arc(double x, double y, double radius, double startAngle, double endAngle, boolean anticlockwise);
 
-    @JSCommand
+    @JSCommand(params = {"text", "x", "y"})
     public static native void fillText(String text, double x, double y);
 
-    @JSCommand
+    @JSCommand(params = {"text", "x", "y"})
     public static native void strokeText(String text, double x, double y);
 
     @JSCommand
@@ -120,13 +141,13 @@ public class Canvas {
     @JSCommand
     public static native void restore();
 
-    @JSCommand
+    @JSCommand(params = {"x", "y"})
     public static native void translate(double x, double y);
 
-    @JSCommand
+    @JSCommand(params = {"angle"})
     public static native void rotate(double angle);
 
-    @JSCommand
+    @JSCommand(params = {"x", "y"})
     public static native void scale(double x, double y);
 
     public static void line(double x1, double y1, double x2, double y2) {
@@ -182,7 +203,15 @@ public class Canvas {
     @JSEvent("tick")
     private static void onTick(double time, double delta) {
         tickEventListeners.forEach(listener -> listener.onTick(time, delta));
+        frameDone();
     }
+
+    /**
+     * Marks the end of the drawing commands of one frame. In tick mode the canvas only shows complete
+     * frames. It is sent automatically after the tick listeners ran.
+     */
+    @JSCommand
+    public static native void frameDone();
 
     @JSEvent("input")
     private static void onInput(String t, MouseInfo m, ModifiersInfo d, KeyInfo k) {

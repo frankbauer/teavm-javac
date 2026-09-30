@@ -147,7 +147,9 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
         String commandName = ann != null && ann.getValue("value") != null ? ann.getValue("value").getString() : method.getName();
         boolean forceImmediate = ann != null && ann.getValue("forceImmediate") != null && ann.getValue("forceImmediate").getBoolean();
         String[] paramHints = readParamHints(ann);
-        int offset = method.getModifiers().contains(ElementModifier.STATIC) ? 0 : 1;
+        // ProgramEmitter.create() always reserves variable 0 ("this"), also for static methods,
+        // so the parameters are the variables 1..n in both cases
+        int offset = 1;
         org.teavm.model.Program originalProgram = method.getProgram();
 
         if (originalProgram != null && !method.getModifiers().contains(ElementModifier.NATIVE)) {
@@ -194,7 +196,9 @@ public class JSRPCPlugin implements TeaVMPlugin, ClassHolderTransformer {
         AnnotationReader ann = method.getAnnotations().get(JS_QUERY);
         String commandName = ann != null && ann.getValue("value") != null ? ann.getValue("value").getString() : method.getName();
         String[] paramHints = readParamHints(ann);
-        int offset = method.getModifiers().contains(ElementModifier.STATIC) ? 0 : 1;
+        // ProgramEmitter.create() always reserves variable 0 ("this"), also for static methods,
+        // so the parameters are the variables 1..n in both cases
+        int offset = 1;
         org.teavm.model.Program originalProgram = method.getProgram();
 
         ProgramEmitter pe = ProgramEmitter.create(method, context.getHierarchy());
