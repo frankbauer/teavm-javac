@@ -91,12 +91,12 @@ public class MapSprite extends MapObject {
         send("play", new JsonObject());
     }
 
-    /** Plays an animation (see {@link SpriteType}) with its default looping. */
+    /** Plays an animation ({@link Animation}, e.g. {@code Animation.MELT}) with its default looping. */
     public void play(String animation) {
         send("play", new JsonObject().put("animation", animation));
     }
 
-    /** Plays an animation once ({@code loop = false}) or repeatedly. */
+    /** Plays an animation ({@link Animation}) once ({@code loop = false}) or repeatedly. */
     public void play(String animation, boolean loop) {
         send("play", new JsonObject().put("animation", animation).put("loop", loop));
     }
