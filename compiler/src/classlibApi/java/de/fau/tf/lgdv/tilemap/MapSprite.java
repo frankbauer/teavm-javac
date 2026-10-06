@@ -9,7 +9,9 @@ import de.fau.tf.lgdv.runtime.annotations.JSEvent;
  * level point (see {@link SpriteType}).
  *
  * <p>The sprite covers {@code type.columns x type.rows} cells; (column, row) is its top left cell.
- * Animated sprites start their default animation automatically.</p>
+ * Animated sprites start their default animation automatically. Sprites with several
+ * {@link SpriteType#variants} (e.g. 20 different rocks) pick one look per cell unless a variant is
+ * given.</p>
  */
 public class MapSprite extends MapObject {
     public interface OnAnimationEnded { void onAnimationEnded(MapSprite sprite, String animation); }
@@ -18,18 +20,30 @@ public class MapSprite extends MapObject {
     public final SpriteType type;
     private int column;
     private int row;
+    private int variant;
     private boolean visible = true;
     private OnAnimationEnded onAnimationEnded;
 
+    /** A sprite with a variant picked from its cell (the same cell always gets the same look). */
     public MapSprite(TileMap map, SpriteType type, int column, int row) {
+        this(map, type, column, row, Math.floorMod(column * 7 + row * 3, type == null ? 1 : type.variants));
+    }
+
+    /** A sprite with the given variant ({@code 0 ... type.variants - 1}). */
+    public MapSprite(TileMap map, SpriteType type, int column, int row, int variant) {
         super("MAPSPRITE");
         if (map == null || type == null) {
             throw new IllegalArgumentException("map and type must not be null");
+        }
+        if (type.isometric != map.isIsometric()) {
+            throw new IllegalArgumentException(type + " is made for " + (type.isometric ? "isometric" : "top-down")
+                    + " maps");
         }
         this.map = map;
         this.type = type;
         this.column = column;
         this.row = row;
+        this.variant = clampVariant(variant);
         publish();
     }
 
@@ -38,7 +52,20 @@ public class MapSprite extends MapObject {
         json.put("map", map.ID)
             .put("sprite", type.name())
             .put("col", column)
-            .put("row", row);
+            .put("row", row)
+            .put("variant", variant);
+    }
+
+    public int getVariant() { return variant; }
+
+    /** Changes the look of sprites with several {@link SpriteType#variants}. */
+    public void setVariant(int variant) {
+        this.variant = clampVariant(variant);
+        send("setVariant", new JsonObject().put("variant", this.variant));
+    }
+
+    private int clampVariant(int v) {
+        return Math.max(0, Math.min(type.variants - 1, v));
     }
 
     public int getColumn() { return column; }
@@ -79,7 +106,7 @@ public class MapSprite extends MapObject {
         send("stop");
     }
 
-    /** Shows a frame of the sprite sheet (0 = first frame) and stops the animation. */
+    /** Shows a frame of the sprite (0 = first frame of its variant) and stops the animation. */
     public void setFrame(int frame) {
         send("setFrame", new JsonObject().put("frame", frame));
     }

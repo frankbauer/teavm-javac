@@ -44,6 +44,10 @@ public class MapCharacter extends MapObject {
             throw new IllegalArgumentException("map and type must not be null");
         }
         map.checkInside(column, row);
+        if (type.isometric != map.isIsometric()) {
+            throw new IllegalArgumentException(type + " is made for " + (type.isometric ? "isometric" : "top-down")
+                    + " maps");
+        }
         this.map = map;
         this.type = type;
         this.column = column;

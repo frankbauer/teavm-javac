@@ -113,6 +113,9 @@ public class CodeBlocks {
 
     public static void postMessage(NewRemoteObjectMessage message, RemoteObject handler){
         eventHandlers.put(String.valueOf(handler.ID), handler);
+        // remote objects receive events (clicks, finished animations, ...) even if no other
+        // class (e.g. Canvas) started listening yet
+        startReceivingEvents(null);
         CodeBlocks.postMessage(message);
     }
 

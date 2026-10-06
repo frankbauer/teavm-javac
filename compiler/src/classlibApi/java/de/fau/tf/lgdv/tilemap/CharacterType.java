@@ -4,18 +4,61 @@ package de.fau.tf.lgdv.tilemap;
 /** The characters that can be moved with a {@link MapCharacter}. */
 public enum CharacterType {
     /** Walking character. Moves on land. */
-    HERO(false, 4.0),
+    HERO(false, 4.0, false),
     /** Sailing ship (MS Floating Point), keeps rocking when idle. Moves on water. */
-    SHIP(true, 2.5);
+    SHIP(true, 2.5, false),
+    /** Isometric. Game figure (blue). Moves on land. */
+    FIGURE_BLUE(false, 2.0, true),
+    /** Isometric. Game figure (blue, big). Moves on land. */
+    FIGURE_BLUE_BIG(false, 2.0, true),
+    /** Isometric. Game figure (blue, loaded). Moves on land. */
+    FIGURE_BLUE_LOADED(false, 2.0, true),
+    /** Isometric. Game figure (blue, loaded, big). Moves on land. */
+    FIGURE_BLUE_LOADED_BIG(false, 2.0, true),
+    /** Isometric. Game figure (green). Moves on land. */
+    FIGURE_GREEN(false, 2.0, true),
+    /** Isometric. Game figure (green, big). Moves on land. */
+    FIGURE_GREEN_BIG(false, 2.0, true),
+    /** Isometric. Game figure (green, loaded). Moves on land. */
+    FIGURE_GREEN_LOADED(false, 2.0, true),
+    /** Isometric. Game figure (green, loaded, big). Moves on land. */
+    FIGURE_GREEN_LOADED_BIG(false, 2.0, true),
+    /** Isometric. Game figure (grinch). Moves on land. */
+    FIGURE_GRINCH(false, 2.0, true),
+    /** Isometric. Game figure (grinch, big). Moves on land. */
+    FIGURE_GRINCH_BIG(false, 2.0, true),
+    /** Isometric. Game figure (grinch, loaded). Moves on land. */
+    FIGURE_GRINCH_LOADED(false, 2.0, true),
+    /** Isometric. Game figure (grinch, loaded, big). Moves on land. */
+    FIGURE_GRINCH_LOADED_BIG(false, 2.0, true),
+    /** Isometric. Game figure (snowman). Moves on land. */
+    FIGURE_SNOWMAN(false, 2.0, true),
+    /** Isometric. Game figure (snowman, big). Moves on land. */
+    FIGURE_SNOWMAN_BIG(false, 2.0, true),
+    /** Isometric. Game figure (snowman, loaded). Moves on land. */
+    FIGURE_SNOWMAN_LOADED(false, 2.0, true),
+    /** Isometric. Game figure (snowman, loaded, big). Moves on land. */
+    FIGURE_SNOWMAN_LOADED_BIG(false, 2.0, true),
+    /** Isometric. Game figure (snowman xmas). Moves on land. */
+    FIGURE_SNOWMAN_XMAS(false, 2.0, true),
+    /** Isometric. Game figure (snowman xmas, big). Moves on land. */
+    FIGURE_SNOWMAN_XMAS_BIG(false, 2.0, true),
+    /** Isometric. Game figure (snowman xmas, loaded). Moves on land. */
+    FIGURE_SNOWMAN_XMAS_LOADED(false, 2.0, true),
+    /** Isometric. Game figure (snowman xmas, loaded, big). Moves on land. */
+    FIGURE_SNOWMAN_XMAS_LOADED_BIG(false, 2.0, true);
 
     /** {@code true}: moves on water, {@code false}: moves on land. */
     public final boolean onWater;
     /** Default speed in tiles per second. */
     public final double speed;
+    /** {@code true}: for isometric maps, {@code false}: for top-down maps. */
+    public final boolean isometric;
 
-    CharacterType(boolean onWater, double speed) {
+    CharacterType(boolean onWater, double speed, boolean isometric) {
         this.onWater = onWater;
         this.speed = speed;
+        this.isometric = isometric;
     }
 
     /** {@code true} if this character may enter a cell with the given terrain tile. */

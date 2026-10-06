@@ -3,138 +3,160 @@ package de.fau.tf.lgdv.tilemap;
 
 /**
  * Everything that can be shown with a {@link MapSprite}: static objects from the theme sheet
- * (trees, houses, the village, the castle, ...) and animated sprites (volcano, arrow, ducks, ...).
+ * (trees, houses, the village, the castle, ...) and animated sprites (volcano, arrow, ducks, ...)
+ * for top-down maps, and the pre-rendered sprites of isometric maps ({@link #isometric}: snowmen,
+ * fire, trees, rocks, huts, ...). Sprites with {@link #variants} &gt; 1 come in several looks.
  */
 public enum SpriteType {
     /** Volcano with smoke, sparks and lava. Animations: "idle", "lava", "loop", "smoke", "sparks" (default "smoke") */
-    VOLCANO(5, 4, true),
+    VOLCANO(5, 4, true, 1, false),
     /** Bouncing arrow. Animations: "loop" (default "loop") */
-    ARROW(1, 1, true),
+    ARROW(1, 1, true, 1, false),
     /** Flashing red level point. Animations: "loop" (default "loop") */
-    LEVEL_POINT_RED(1, 1, true),
+    LEVEL_POINT_RED(1, 1, true, 1, false),
     /** Flashing yellow level point. Animations: "loop" (default "loop") */
-    LEVEL_POINT_YELLOW(1, 1, true),
+    LEVEL_POINT_YELLOW(1, 1, true, 1, false),
     /** Book (glossary) that opens and closes. Animations: "close", "closed", "loop", "open", "opened" (default "closed") */
-    BOOK(2, 1, true),
+    BOOK(2, 1, true, 1, false),
     /** Brown duck. Animations: "loop" (default "loop") */
-    DUCK_BROWN(1, 1, true),
+    DUCK_BROWN(1, 1, true, 1, false),
     /** Green duck. Animations: "loop" (default "loop") */
-    DUCK_GREEN(1, 1, true),
+    DUCK_GREEN(1, 1, true, 1, false),
     /** Yellow duckling. Animations: "loop" (default "loop") */
-    DUCK_YELLOW(1, 1, true),
+    DUCK_YELLOW(1, 1, true, 1, false),
     /** Shark fin. Animations: "loop" (default "loop") */
-    SHARK(1, 1, true),
+    SHARK(1, 1, true, 1, false),
     /** Shark swimming from left to right. Animations: "loop" (default "loop") */
-    SHARK_SWIMMING(4, 1, true),
+    SHARK_SWIMMING(4, 1, true, 1, false),
     /** Shipwreck. Animations: "loop" (default "loop") */
-    SHIPWRECK(1, 1, true),
+    SHIPWRECK(1, 1, true, 1, false),
     /** Grass moving in the wind. Animations: "loop" (default "loop") */
-    GRASS_WIND(1, 1, true),
+    GRASS_WIND(1, 1, true, 1, false),
     /** Grass moving in the wind. Animations: "loop" (default "loop") */
-    GRASS_WIND_2(1, 1, true),
+    GRASS_WIND_2(1, 1, true, 1, false),
     /** Ripples on the water. Animations: "loop" (default "loop") */
-    WATER_RIPPLES(1, 1, true),
+    WATER_RIPPLES(1, 1, true, 1, false),
     /** Ripples on the water. Animations: "loop" (default "loop") */
-    WATER_RIPPLES_2(1, 1, true),
+    WATER_RIPPLES_2(1, 1, true, 1, false),
     /** Village (2 x 2 tiles) */
-    VILLAGE(2, 2, false),
+    VILLAGE(2, 2, false, 1, false),
     /** Castle (3 x 2 tiles) */
-    CASTLE(3, 2, false),
+    CASTLE(3, 2, false, 1, false),
     /** Small ground details (grass tufts, ripples, ...) */
-    GROUND_DETAIL_1(1, 1, false),
+    GROUND_DETAIL_1(1, 1, false, 1, false),
     /** Small ground details */
-    GROUND_DETAIL_2(1, 1, false),
+    GROUND_DETAIL_2(1, 1, false, 1, false),
     /** Small ground details */
-    GROUND_DETAIL_3(1, 1, false),
+    GROUND_DETAIL_3(1, 1, false, 1, false),
     /** Small ground details */
-    GROUND_DETAIL_4(1, 1, false),
+    GROUND_DETAIL_4(1, 1, false, 1, false),
     /** Small ground details */
-    GROUND_DETAIL_5(1, 1, false),
+    GROUND_DETAIL_5(1, 1, false, 1, false),
     /** Flowers (footprints in the snow theme) */
-    FLOWERS_1(1, 1, false),
+    FLOWERS_1(1, 1, false, 1, false),
     /** Flowers */
-    FLOWERS_2(1, 1, false),
+    FLOWERS_2(1, 1, false, 1, false),
     /** Flowers */
-    FLOWERS_3(1, 1, false),
+    FLOWERS_3(1, 1, false, 1, false),
     /** Flowers */
-    FLOWERS_4(1, 1, false),
+    FLOWERS_4(1, 1, false, 1, false),
     /** Tree (palm, cactus, fir, depending on the theme) */
-    TREE_1(1, 1, false),
+    TREE_1(1, 1, false, 1, false),
     /** Tree */
-    TREE_2(1, 1, false),
+    TREE_2(1, 1, false, 1, false),
     /** Tree */
-    TREE_3(1, 1, false),
+    TREE_3(1, 1, false, 1, false),
     /** Group of trees */
-    TREES_1(1, 1, false),
+    TREES_1(1, 1, false, 1, false),
     /** Group of trees (penguins in the snow theme) */
-    TREES_2(1, 1, false),
+    TREES_2(1, 1, false, 1, false),
     /** Bush (birds, snake or snow drift, depending on the theme) */
-    BUSH(1, 1, false),
+    BUSH(1, 1, false, 1, false),
     /** Animals (ducks, gull, snake, snowman) */
-    ANIMAL_1(1, 1, false),
+    ANIMAL_1(1, 1, false, 1, false),
     /** Animal */
-    ANIMAL_2(1, 1, false),
+    ANIMAL_2(1, 1, false, 1, false),
     /** Small animal */
-    ANIMAL_3(1, 1, false),
+    ANIMAL_3(1, 1, false, 1, false),
     /** Animal (a boat in the beach theme) */
-    ANIMAL_4(1, 1, false),
+    ANIMAL_4(1, 1, false, 1, false),
     /** Axe */
-    AXE(1, 1, false),
+    AXE(1, 1, false, 1, false),
     /** Log */
-    LOG(1, 1, false),
+    LOG(1, 1, false, 1, false),
     /** Closed book */
-    BOOK_CLOSED(1, 1, false),
+    BOOK_CLOSED(1, 1, false, 1, false),
     /** Open book */
-    BOOK_OPEN(1, 1, false),
+    BOOK_OPEN(1, 1, false, 1, false),
     /** Debris */
-    DEBRIS(1, 1, false),
+    DEBRIS(1, 1, false, 1, false),
     /** Red dot */
-    MARKER_RED(1, 1, false),
+    MARKER_RED(1, 1, false, 1, false),
     /** Yellow dot */
-    MARKER_YELLOW(1, 1, false),
+    MARKER_YELLOW(1, 1, false, 1, false),
     /** Yellow arrow pointing down */
-    MARKER_ARROW(1, 1, false),
+    MARKER_ARROW(1, 1, false, 1, false),
     /** Small house */
-    HOUSE(1, 1, false),
+    HOUSE(1, 1, false, 1, false),
     /** House */
-    HOUSE_2(1, 1, false),
+    HOUSE_2(1, 1, false, 1, false),
     /** House with a gate */
-    HOUSE_3(1, 1, false),
+    HOUSE_3(1, 1, false, 1, false),
     /** Dock at a coast to the west */
-    DOCK(1, 1, false),
+    DOCK(1, 1, false, 1, false),
     /** Dock at a cliff to the north */
-    DOCK_2(1, 1, false),
+    DOCK_2(1, 1, false, 1, false),
     /** Anchored ship */
-    SHIP(1, 1, false),
+    SHIP(1, 1, false, 1, false),
     /** Rocks in the water */
-    ROCKS_1(1, 1, false),
+    ROCKS_1(1, 1, false, 1, false),
     /** Rocks in the water */
-    ROCKS_2(1, 1, false),
+    ROCKS_2(1, 1, false, 1, false),
     /** Rocks in the water */
-    ROCKS_3(1, 1, false),
+    ROCKS_3(1, 1, false, 1, false),
     /** Rocks in the water */
-    ROCKS_4(1, 1, false),
+    ROCKS_4(1, 1, false, 1, false),
     /** Rocks in the water */
-    ROCKS_5(1, 1, false),
+    ROCKS_5(1, 1, false, 1, false),
     /** Small rock in the water */
-    ROCK_1(1, 1, false),
+    ROCK_1(1, 1, false, 1, false),
     /** Small rocks in the water */
-    ROCK_2(1, 1, false),
+    ROCK_2(1, 1, false, 1, false),
     /** Small rock in the water */
-    ROCK_3(1, 1, false),
+    ROCK_3(1, 1, false, 1, false),
     /** Small rocks in the water */
-    ROCK_4(1, 1, false),
+    ROCK_4(1, 1, false, 1, false),
     /** Small rock in the water */
-    ROCK_5(1, 1, false);
+    ROCK_5(1, 1, false, 1, false),
+    /** Isometric. Snowman (5 variants) that melts ("melt"). Animations: "melt" */
+    SNOWMAN(1, 1, true, 5, true),
+    /** Isometric. Snowman with a Christmas hat (6 variants) that melts ("melt"). Animations: "melt" */
+    SNOWMAN_XMAS(1, 1, true, 6, true),
+    /** Isometric. Pile of hay that burns: "burn" (all), or "ignite", "burning" (loop) and "burnOut". Animations: "burn", "burnOut", "burning", "ignite" */
+    FIRE(1, 1, true, 1, true),
+    /** Isometric. Snow clouds (4 variants) that leave snow ("snowing"). Animations: "snowing" */
+    SNOW(1, 1, true, 4, true),
+    /** Isometric. Group of trees (20 variants) */
+    TREES(1, 1, false, 20, true),
+    /** Isometric. Rocks (20 variants) */
+    STONES(1, 1, false, 20, true),
+    /** Isometric. Hut (6 colors) */
+    HUT(1, 1, false, 6, true);
 
     /** Number of tiles the sprite covers horizontally / vertically. */
     public final int columns, rows;
     /** {@code true} for sprites with an animation. */
     public final boolean animated;
+    /** Number of looks the sprite comes in (see {@link MapSprite#setVariant(int)}). */
+    public final int variants;
+    /** {@code true}: for isometric maps, {@code false}: for top-down maps. */
+    public final boolean isometric;
 
-    SpriteType(int columns, int rows, boolean animated) {
+    SpriteType(int columns, int rows, boolean animated, int variants, boolean isometric) {
         this.columns = columns;
         this.rows = rows;
         this.animated = animated;
+        this.variants = variants;
+        this.isometric = isometric;
     }
 }

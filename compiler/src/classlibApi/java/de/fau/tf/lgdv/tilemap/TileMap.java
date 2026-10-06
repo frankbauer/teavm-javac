@@ -1,5 +1,6 @@
 package de.fau.tf.lgdv.tilemap;
 
+import de.fau.tf.lgdv.graphics.Color;
 import de.fau.tf.lgdv.json.JsonArray;
 import de.fau.tf.lgdv.json.JsonElement;
 import de.fau.tf.lgdv.json.JsonObject;
@@ -19,6 +20,11 @@ import de.fau.tf.lgdv.runtime.annotations.JSEvent;
  *   everything else, e.g. to hide unexplored parts of the map.</li>
  * </ul>
  * {@link MapSprite}s and {@link MapCharacter}s are placed on top of the decorations.
+ *
+ * <p>With {@link Projection#ISOMETRIC} the map is drawn as an isometric grid of diamonds instead
+ * (land and water in the colors of the theme), with the isometric sprites and characters on it.
+ * Cells can be highlighted with {@link #sunRay(int, int)}, {@link #flashCell(int, int)} and
+ * {@link #tintCell(int, int, Color, double)} in both projections.</p>
  *
  * <pre>
  * int L = Terrain.LAND, W = Terrain.WATER;
@@ -42,6 +48,7 @@ public class TileMap extends MapObject {
 
     public final int columns;
     public final int rows;
+    public final Projection projection;
     private Theme theme;
     private final int[][] terrain;
     private final int[][] decorations;
@@ -51,9 +58,14 @@ public class TileMap extends MapObject {
     private double zoom = ZOOM_FIT;
     private OnTileClicked onTileClicked;
 
-    /** A map of the given size, filled with water. */
+    /** A top-down map of the given size, filled with water. */
     public TileMap(Theme theme, int columns, int rows) {
         this(theme, filled(columns, rows, Terrain.WATER));
+    }
+
+    /** A map of the given size, filled with land (e.g. an isometric meadow). */
+    public TileMap(Theme theme, int columns, int rows, Projection projection) {
+        this(theme, filled(columns, rows, Terrain.LAND), projection);
     }
 
     /** A map with the valley theme. */
@@ -67,7 +79,18 @@ public class TileMap extends MapObject {
      *                have the same length.
      */
     public TileMap(Theme theme, int[][] terrain) {
+        this(theme, terrain, Projection.TOP_DOWN);
+    }
+
+    /**
+     * @param theme      look of the map
+     * @param terrain    terrain tiles ({@link Terrain}), indexed {@code [row][column]}. Isometric maps
+     *                   only distinguish land and water.
+     * @param projection top-down or isometric
+     */
+    public TileMap(Theme theme, int[][] terrain, Projection projection) {
         super("TILEMAP");
+        this.projection = projection == null ? Projection.TOP_DOWN : projection;
         if (terrain == null || terrain.length == 0 || terrain[0].length == 0) {
             throw new IllegalArgumentException("terrain must have at least one row and one column");
         }
@@ -85,6 +108,7 @@ public class TileMap extends MapObject {
     @Override
     protected void addAttributes(JsonObject json) {
         json.put("theme", theme.id())
+            .put("projection", projection == Projection.ISOMETRIC ? "isometric" : "topdown")
             .put("columns", columns)
             .put("rows", rows)
             .put("terrain", flatten(terrain))
@@ -241,6 +265,57 @@ public class TileMap extends MapObject {
     /** Shows a grid with the cell coordinates (helpful while designing a map). */
     public void showGrid(boolean visible) {
         send("showGrid", new JsonObject().put("visible", visible));
+    }
+
+    /** Shows the row numbers along the left and the column numbers along the top edge. */
+    public void showCoordinates(boolean visible) {
+        send("showCoordinates", new JsonObject().put("visible", visible));
+    }
+
+    public boolean isIsometric() {
+        return projection == Projection.ISOMETRIC;
+    }
+
+    // ---------------------------------------------------------------- cell effects
+
+    /** A sun at the top of the view sends a ray of light onto the cell, fading out in 2.2 s. */
+    public void sunRay(int column, int row) {
+        sunRay(column, row, 2.2);
+    }
+
+    /** A sun ray onto the cell that fades out within {@code seconds}. */
+    public void sunRay(int column, int row, double seconds) {
+        checkInside(column, row);
+        send("sunRay", cell(column, row).put("seconds", seconds));
+    }
+
+    /** Flashes a yellow outline around the cell (0.6 s), e.g. to show that it was checked. */
+    public void flashCell(int column, int row) {
+        flashCell(column, row, new Color(1.0, 0.88, 0.24, 1.0), 0.6);
+    }
+
+    /** Flashes an outline in the given color around the cell, fading out within {@code seconds}. */
+    public void flashCell(int column, int row, Color color, double seconds) {
+        checkInside(column, row);
+        send("flash", cell(column, row).put("color", color.toRgbaString()).put("seconds", seconds));
+    }
+
+    /**
+     * Colors the inner part of a cell, fading in within {@code seconds} (0: at once), e.g. melt
+     * water. The tint stays until it is replaced or removed with {@link #clearTint(int, int)}.
+     */
+    public void tintCell(int column, int row, Color color, double seconds) {
+        checkInside(column, row);
+        send("tint", cell(column, row).put("color", color.toRgbaString()).put("seconds", seconds));
+    }
+
+    public void clearTint(int column, int row) {
+        checkInside(column, row);
+        send("tint", cell(column, row));
+    }
+
+    public void clearTints() {
+        send("clearTints");
     }
 
     // ---------------------------------------------------------------- events
