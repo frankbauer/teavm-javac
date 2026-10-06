@@ -82,6 +82,11 @@ public class CommandBuffer {
     public static void deactivate(){
         RemoteObject.currentBuffer = null;
     }
+
+    /** The buffer that currently records the commands of remote objects, or {@code null}. */
+    public static CommandBuffer getActive(){
+        return RemoteObject.currentBuffer;
+    }
     
     public void addCommand(String commandJson){
         commands.add(commandJson);
